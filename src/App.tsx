@@ -35,18 +35,17 @@ export default function App() {
     recargarRef.current = recargar
   }, [recargar])
 
-  const enUso = nube.estadoSesion === 'abierto' || nube.estadoSesion === 'local'
+  const enUso = nube.estadoSesion === 'abierto'
 
   /*
-   * La semilla se aplica una sola vez y solo cuando ya sabemos si hay nube: en
+   * La semilla se aplica una sola vez y solo tras la primera sincronización: en
    * un dispositivo nuevo, sembrar antes de bajar el índice remoto crearía
    * "Biología" y "Química" duplicadas con identificadores distintos.
    */
   const semillaIntentada = useRef(false)
   useEffect(() => {
     if (semillaIntentada.current) return
-    const conNube = nube.estadoSesion === 'abierto' && nube.estadoNube === 'sincronizado'
-    if (nube.estadoSesion !== 'local' && !conNube) return
+    if (nube.estadoSesion !== 'abierto' || nube.estadoNube !== 'sincronizado') return
     semillaIntentada.current = true
     if (cuadernos.length !== 0) return
 
@@ -54,7 +53,7 @@ export default function App() {
       // Sin esta segunda subida, la nube se quedaría con el índice vacío que se
       // escribió antes de sembrar, y quien cerrara la app aquí no encontraría
       // nada al abrirla en otro dispositivo.
-      if (conNube) void nube.sincronizarAhora()
+      void nube.sincronizarAhora()
     })
   }, [nube.estadoSesion, nube.estadoNube, cuadernos.length, sembrarSiVacio, nube.sincronizarAhora])
 
@@ -91,7 +90,6 @@ export default function App() {
         estado={nube.estadoSesion}
         onConectar={nube.conectar}
         onDesbloquear={nube.desbloquear}
-        onUsarSinConectar={nube.usarSinConectar}
         onOlvidarCredencial={nube.olvidarCredencialGuardada}
       />
     )
@@ -107,7 +105,7 @@ export default function App() {
       donde={nube.donde}
       onSincronizar={() => void nube.sincronizarAhora()}
       onCerrarSesion={(borrar) => void nube.cerrarSesion(borrar)}
-      onConectar={nube.volverAlAcceso}
+      onUsarOtroToken={nube.olvidarCredencialGuardada}
     />
   )
 
