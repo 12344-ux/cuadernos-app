@@ -1,0 +1,480 @@
+:root {
+  --tinta: #0f172a;
+  --tinta-suave: #64748b;
+  --linea: #e2e8f0;
+  --fondo: #f7f8fa;
+  --superficie: #ffffff;
+  --acento: #4f46e5;
+  --acento-suave: #eef2ff;
+  --peligro: #dc2626;
+  --radio: 10px;
+  --sombra: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06);
+
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  color: var(--tinta);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--fondo);
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+/* ---------- Botones ---------- */
+
+.boton-primario,
+.boton-secundario {
+  border-radius: var(--radio);
+  border: 1px solid transparent;
+  padding: 0.5rem 0.9rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.boton-primario {
+  background: var(--acento);
+  color: #fff;
+}
+
+.boton-primario:hover {
+  background: #4338ca;
+}
+
+.boton-secundario {
+  background: var(--superficie);
+  border-color: var(--linea);
+  color: var(--tinta);
+}
+
+.boton-secundario:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+/* ---------- Selector de cuadernos ---------- */
+
+.selector {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 4rem;
+}
+
+.selector-cabecera {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.selector h1 {
+  margin: 0;
+  font-size: 1.9rem;
+  letter-spacing: -0.02em;
+}
+
+.subtitulo {
+  margin: 0.35rem 0 0;
+  color: var(--tinta-suave);
+  font-size: 0.9rem;
+}
+
+.creador {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.entrada-nombre {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--superficie);
+  color: var(--tinta);
+  min-width: 12rem;
+}
+
+.entrada-nombre:focus {
+  outline: 2px solid var(--acento);
+  outline-offset: -1px;
+  border-color: var(--acento);
+}
+
+.pestanas {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.pestanas button {
+  background: none;
+  border: none;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  color: var(--tinta-suave);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.pestanas button.activa {
+  background: var(--acento-suave);
+  color: var(--acento);
+}
+
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+
+.tarjeta {
+  background: var(--superficie);
+  border: 1px solid var(--linea);
+  border-radius: 14px;
+  box-shadow: var(--sombra);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.tarjeta:hover {
+  border-color: #c7d2fe;
+  transform: translateY(-2px);
+}
+
+.tarjeta.archivada {
+  opacity: 0.62;
+}
+
+.tarjeta-abrir {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 1.1rem 1.1rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.tarjeta-nombre {
+  font-size: 1.05rem;
+  font-weight: 650;
+  color: var(--tinta);
+}
+
+.tarjeta-meta {
+  font-size: 0.8rem;
+  color: var(--tinta-suave);
+}
+
+.tarjeta .entrada-nombre {
+  margin: 0.9rem 0.9rem 0.5rem;
+  min-width: 0;
+}
+
+.tarjeta-acciones {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.5rem 0.7rem 0.7rem;
+  border-top: 1px solid var(--linea);
+  margin-top: auto;
+}
+
+.tarjeta-acciones button {
+  background: none;
+  border: none;
+  color: var(--tinta-suave);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.3rem 0.45rem;
+  border-radius: 6px;
+}
+
+.tarjeta-acciones button:hover {
+  background: #f1f5f9;
+  color: var(--tinta);
+}
+
+.tarjeta-acciones button.peligro:hover {
+  background: #fef2f2;
+  color: var(--peligro);
+}
+
+.vacio {
+  color: var(--tinta-suave);
+  font-size: 0.95rem;
+  padding: 2rem 1.5rem;
+}
+
+/* ---------- Vista de un cuaderno ---------- */
+
+.vista-cuaderno {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.barra-superior {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.6rem 1rem;
+  background: var(--superficie);
+  border-bottom: 1px solid var(--linea);
+  flex: 0 0 auto;
+  z-index: 5;
+}
+
+.boton-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 0.35rem 0.7rem 0.35rem 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--tinta-suave);
+}
+
+.boton-volver:hover {
+  color: var(--tinta);
+  border-color: #cbd5e1;
+}
+
+.titulo-cuaderno {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.lienzo {
+  flex: 1 1 auto;
+  position: relative;
+  min-height: 0;
+}
+
+.panel-herramientas {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.panel-ayuda {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--linea);
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.75rem;
+  color: var(--tinta-suave);
+  pointer-events: none;
+}
+
+.estado-guardado {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.75rem;
+  z-index: 6;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: var(--superficie);
+  border: 1px solid var(--linea);
+  color: var(--tinta-suave);
+}
+
+.estado-guardado.estado-guardando {
+  color: #b45309;
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+
+.estado-guardado.estado-guardado {
+  color: #15803d;
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.estado-guardado.estado-error {
+  color: var(--peligro);
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+/* ---------- Cuadro de texto en el lienzo ---------- */
+
+.nodo-texto {
+  width: 100%;
+  height: 100%;
+  border: 1.5px solid;
+  border-radius: 12px;
+  padding: 0.6rem 0.7rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+  display: flex;
+}
+
+.nodo-texto.seleccionado {
+  box-shadow: 0 0 0 2px var(--acento);
+}
+
+.nodo-contenido {
+  width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow: hidden;
+}
+
+.nodo-vacio {
+  color: var(--tinta-suave);
+  font-style: italic;
+}
+
+.resaltado {
+  /* Marcador que respeta los saltos de línea, a diferencia de un fondo plano. */
+  background: linear-gradient(transparent 22%, rgba(250, 204, 21, 0.6) 22%);
+  padding: 0 0.1em;
+  border-radius: 2px;
+}
+
+.nodo-area {
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  padding: 0;
+}
+
+.punto-conexion {
+  width: 9px;
+  height: 9px;
+  background: var(--superficie);
+  border: 1.5px solid #94a3b8;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.react-flow__node:hover .punto-conexion,
+.react-flow__node.selected .punto-conexion {
+  opacity: 1;
+}
+
+.punto-conexion:hover {
+  background: var(--acento);
+  border-color: var(--acento);
+  transform: scale(1.25);
+}
+
+/* ---------- Barra flotante del cuadro ---------- */
+
+.barra-nodo {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--superficie);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 0.3rem 0.4rem;
+}
+
+.muestra-color {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 1.5px solid;
+  padding: 0;
+}
+
+.muestra-color.activa {
+  box-shadow: 0 0 0 2px var(--acento);
+}
+
+.separador-barra {
+  width: 1px;
+  height: 18px;
+  background: var(--linea);
+  margin: 0 0.2rem;
+}
+
+.boton-barra {
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 0.25rem 0.45rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--tinta-suave);
+}
+
+.boton-barra:hover {
+  background: #f1f5f9;
+  color: var(--tinta);
+}
+
+.boton-barra.activo {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.boton-barra.peligro:hover {
+  background: #fef2f2;
+  color: var(--peligro);
+}
+
+/* ---------- Ajustes a los controles de React Flow ---------- */
+
+.react-flow__attribution {
+  display: none;
+}
+
+.react-flow__controls {
+  box-shadow: var(--sombra);
+  border-radius: var(--radio);
+  overflow: hidden;
+}
+
+.react-flow__minimap {
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  border: 1px solid var(--linea);
+  /* Por defecto ocupaba casi un cuarto de la pantalla en portátiles. */
+  width: 150px !important;
+  height: 105px !important;
+}
+
+.react-flow__edge-path {
+  stroke: #94a3b8;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--acento);
+}
