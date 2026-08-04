@@ -73,3 +73,34 @@ export function claves(): Promise<string[]> {
     lista.map(String),
   )
 }
+
+/**
+ * Borra la base de datos completa. Se usa al cerrar sesión en un equipo
+ * compartido: sin esto, los apuntes quedarían legibles en el navegador del
+ * aula para quien lo use después.
+ */
+export function eliminarBaseDeDatos(): Promise<void> {
+  return new Promise((resolver, rechazar) => {
+    const cerrar = promesaDb
+    promesaDb = null
+
+    const borrar = () => {
+      const solicitud = indexedDB.deleteDatabase(NOMBRE_DB)
+      solicitud.onsuccess = () => resolver()
+      solicitud.onerror = () => rechazar(solicitud.error)
+      // Si otra pestaña mantiene la base abierta, no se puede borrar ahora.
+      solicitud.onblocked = () =>
+        rechazar(new Error('Cierra las demás pestañas de Cuadernos para poder borrar los datos.'))
+    }
+
+    if (!cerrar) {
+      borrar()
+      return
+    }
+    // Hay que cerrar la conexión antes de borrar o la petición queda bloqueada.
+    cerrar.then((db) => {
+      db.close()
+      borrar()
+    }, borrar)
+  })
+}

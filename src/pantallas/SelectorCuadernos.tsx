@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { TarjetaCuaderno } from '../componentes/TarjetaCuaderno'
 import type { Cuaderno } from '../tipos'
 
 type Props = {
   cuadernos: Cuaderno[]
+  barraNube?: ReactNode
   onAbrir: (id: string) => void
   onCrear: (nombre: string) => void
   onRenombrar: (id: string, nombre: string) => void
@@ -13,6 +14,7 @@ type Props = {
 
 export function SelectorCuadernos({
   cuadernos,
+  barraNube,
   onAbrir,
   onCrear,
   onRenombrar,
@@ -46,6 +48,7 @@ export function SelectorCuadernos({
 
   return (
     <main className="selector">
+      {barraNube}
       <header className="selector-cabecera">
         <div>
           <h1>Cuadernos</h1>

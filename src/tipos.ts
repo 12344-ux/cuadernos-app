@@ -51,6 +51,12 @@ export type Cuaderno = {
   archivado: boolean
   /** Cache para mostrar en la tarjeta sin abrir el documento. */
   numIdeas: number
+  /**
+   * Lápida de borrado. Una materia eliminada no se quita del índice, se marca:
+   * si se borrara sin más, al sincronizar volvería desde otro dispositivo que
+   * todavía la tuviera. Se oculta de la interfaz y su archivo remoto se elimina.
+   */
+  eliminado?: boolean
 }
 
 export const VERSION_INDICE = 1 as const
@@ -58,6 +64,10 @@ export const VERSION_INDICE = 1 as const
 export type IndiceCuadernos = {
   version: typeof VERSION_INDICE
   cuadernos: Cuaderno[]
+  /** Última materia abierta, para retomar el trabajo en cualquier dispositivo. */
+  ultimoCuaderno?: string | null
+  /** Marca de tiempo de la última escritura, para fusionar índices. */
+  actualizado?: number
 }
 
 export const VERSION_DOCUMENTO = 1 as const

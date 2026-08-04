@@ -1,5 +1,5 @@
 import { ReactFlowProvider } from '@xyflow/react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { cargarDocumento } from '../almacenamiento/documentos'
 import { Lienzo } from '../componentes/Lienzo'
 import { irAlSelector } from '../hooks/useRuta'
@@ -7,10 +7,11 @@ import type { Cuaderno, DocumentoCuaderno } from '../tipos'
 
 type Props = {
   cuaderno: Cuaderno
+  barraNube?: ReactNode
   onActividad: (id: string, numIdeas: number) => void
 }
 
-export function VistaCuaderno({ cuaderno, onActividad }: Props) {
+export function VistaCuaderno({ cuaderno, barraNube, onActividad }: Props) {
   const [documento, setDocumento] = useState<DocumentoCuaderno | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -60,6 +61,8 @@ export function VistaCuaderno({ cuaderno, onActividad }: Props) {
           Cuadernos
         </button>
         <h1 className="titulo-cuaderno">{cuaderno.nombre}</h1>
+        <div className="espaciador" />
+        {barraNube}
       </header>
 
       {error ? (
