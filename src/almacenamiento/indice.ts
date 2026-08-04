@@ -7,22 +7,30 @@ import { VERSION_INDICE, type Cuaderno, type IndiceCuadernos } from '../tipos'
  */
 const CLAVE = 'cuadernos:indice'
 
-export function leerIndice(): IndiceCuadernos {
-  try {
-    const crudo = localStorage.getItem(CLAVE)
-    if (!crudo) return { version: VERSION_INDICE, cuadernos: [] }
+const INDICE_VACIO: IndiceCuadernos = {
+  version: VERSION_INDICE,
+  cuadernos: [],
+  ultimoCuaderno: null,
+  actualizado: 0,
+}
 
-    const datos = JSON.parse(crudo) as unknown
-    if (
-      typeof datos !== 'object' ||
-      datos === null ||
-      !Array.isArray((datos as IndiceCuadernos).cuadernos)
-    ) {
-      return { version: VERSION_INDICE, cuadernos: [] }
-    }
+/** Normaliza un índice venido de localStorage o de la nube. */
+export function normalizarIndice(datos: unknown): IndiceCuadernos {
+  if (
+    typeof datos !== 'object' ||
+    datos === null ||
+    !Array.isArray((datos as IndiceCuadernos).cuadernos)
+  ) {
+    return { ...INDICE_VACIO }
+  }
 
-    // Normaliza para tolerar índices escritos por versiones anteriores.
-    const cuadernos = (datos as IndiceCuadernos).cuadernos.map(
+  const entrada = datos as IndiceCuadernos
+
+  return {
+    version: VERSION_INDICE,
+    ultimoCuaderno: entrada.ultimoCuaderno ?? null,
+    actualizado: Number(entrada.actualizado) || 0,
+    cuadernos: entrada.cuadernos.map(
       (c): Cuaderno => ({
         id: String(c.id),
         nombre: String(c.nombre ?? 'Sin nombre'),
@@ -30,14 +38,26 @@ export function leerIndice(): IndiceCuadernos {
         modificado: Number(c.modificado) || Date.now(),
         archivado: Boolean(c.archivado),
         numIdeas: Number(c.numIdeas) || 0,
+        ...(c.eliminado ? { eliminado: true as const } : {}),
       }),
-    )
+    ),
+  }
+}
 
-    return { version: VERSION_INDICE, cuadernos }
+export function leerIndice(): IndiceCuadernos {
+  try {
+    const crudo = localStorage.getItem(CLAVE)
+    if (!crudo) return { ...INDICE_VACIO }
+    return normalizarIndice(JSON.parse(crudo))
   } catch (error) {
     console.error('No se pudo leer el índice de cuadernos', error)
-    return { version: VERSION_INDICE, cuadernos: [] }
+    return { ...INDICE_VACIO }
   }
+}
+
+/** Las materias que la interfaz debe mostrar: sin lápidas de borrado. */
+export function cuadernosVisibles(indice: IndiceCuadernos): Cuaderno[] {
+  return indice.cuadernos.filter((c) => !c.eliminado)
 }
 
 export function escribirIndice(indice: IndiceCuadernos): void {

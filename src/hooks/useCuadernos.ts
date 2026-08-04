@@ -1,38 +1,50 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { eliminarDocumento } from '../almacenamiento/documentos'
-import { escribirIndice, leerIndice, nuevoId } from '../almacenamiento/indice'
+import {
+  cuadernosVisibles,
+  escribirIndice,
+  leerIndice,
+  nuevoId,
+} from '../almacenamiento/indice'
 import { aplicarSemillaSiHaceFalta } from '../almacenamiento/semilla'
-import type { Cuaderno } from '../tipos'
+import { VERSION_INDICE, type Cuaderno, type IndiceCuadernos } from '../tipos'
+
+type Opciones = {
+  /** Marca la materia para subirla en la próxima sincronización. */
+  alCambiar?: (idCuaderno: string) => void
+}
 
 /** Estado y operaciones sobre la lista de materias. */
-export function useCuadernos() {
-  const [cuadernos, setCuadernos] = useState<Cuaderno[]>(() => leerIndice().cuadernos)
-  const [cargando, setCargando] = useState(true)
+export function useCuadernos({ alCambiar }: Opciones = {}) {
+  const [indice, setIndice] = useState<IndiceCuadernos>(() => leerIndice())
 
-  useEffect(() => {
-    let activo = true
-    aplicarSemillaSiHaceFalta()
-      .then((sembrados) => {
-        if (!activo) return
-        if (sembrados) setCuadernos(sembrados)
-        setCargando(false)
-      })
-      .catch((error) => {
-        console.error('Falló la semilla inicial', error)
-        if (activo) setCargando(false)
-      })
-    return () => {
-      activo = false
-    }
-  }, [])
+  /** Solo las que la interfaz debe mostrar: las lápidas quedan fuera. */
+  const cuadernos = useMemo(() => cuadernosVisibles(indice), [indice])
 
-  const aplicar = useCallback((cambio: (previos: Cuaderno[]) => Cuaderno[]) => {
-    setCuadernos((previos) => {
-      const siguientes = cambio(previos)
-      escribirIndice({ version: 1, cuadernos: siguientes })
-      return siguientes
-    })
-  }, [])
+  const aplicar = useCallback(
+    (cambio: (previo: IndiceCuadernos) => IndiceCuadernos) => {
+      setIndice((previo) => {
+        const siguiente = { ...cambio(previo), version: VERSION_INDICE, actualizado: Date.now() }
+        escribirIndice(siguiente)
+        return siguiente
+      })
+    },
+    [],
+  )
+
+  /** Relee el índice del almacén. La usa la sincronización tras fusionar. */
+  const recargar = useCallback(() => setIndice(leerIndice()), [])
+
+  /**
+   * La semilla ya no se aplica automáticamente al arrancar: en un dispositivo
+   * nuevo que va a sincronizar, sembrar antes de bajar la nube crearía
+   * "Biología" y "Química" duplicadas con otros identificadores. Ahora la app
+   * decide cuándo llamarla.
+   */
+  const sembrarSiVacio = useCallback(async () => {
+    const sembrados = await aplicarSemillaSiHaceFalta()
+    if (sembrados) recargar()
+  }, [recargar])
 
   const crear = useCallback(
     (nombre: string): Cuaderno => {
@@ -45,54 +57,102 @@ export function useCuadernos() {
         archivado: false,
         numIdeas: 0,
       }
-      aplicar((previos) => [cuaderno, ...previos])
+      aplicar((previo) => ({ ...previo, cuadernos: [cuaderno, ...previo.cuadernos] }))
+      alCambiar?.(cuaderno.id)
       return cuaderno
     },
-    [aplicar],
+    [aplicar, alCambiar],
   )
 
   const renombrar = useCallback(
     (id: string, nombre: string) => {
       const limpio = nombre.trim()
       if (!limpio) return
-      aplicar((previos) =>
-        previos.map((c) => (c.id === id ? { ...c, nombre: limpio, modificado: Date.now() } : c)),
-      )
+      aplicar((previo) => ({
+        ...previo,
+        cuadernos: previo.cuadernos.map((c) =>
+          c.id === id ? { ...c, nombre: limpio, modificado: Date.now() } : c,
+        ),
+      }))
+      alCambiar?.(id)
     },
-    [aplicar],
+    [aplicar, alCambiar],
   )
 
   const alternarArchivado = useCallback(
     (id: string) => {
-      aplicar((previos) =>
-        previos.map((c) => (c.id === id ? { ...c, archivado: !c.archivado } : c)),
-      )
+      aplicar((previo) => ({
+        ...previo,
+        cuadernos: previo.cuadernos.map((c) =>
+          c.id === id ? { ...c, archivado: !c.archivado, modificado: Date.now() } : c,
+        ),
+      }))
+      alCambiar?.(id)
     },
-    [aplicar],
+    [aplicar, alCambiar],
   )
 
-  /** Borra los metadatos y también el documento en IndexedDB, para no dejar huérfanos. */
+  /**
+   * Eliminar deja una lápida en lugar de quitar la entrada. Si se borrara sin
+   * más, la próxima sincronización con un dispositivo que todavía la tuviera la
+   * resucitaría. El documento local sí se borra de inmediato.
+   */
   const eliminar = useCallback(
     async (id: string) => {
-      aplicar((previos) => previos.filter((c) => c.id !== id))
+      aplicar((previo) => ({
+        ...previo,
+        ultimoCuaderno: previo.ultimoCuaderno === id ? null : previo.ultimoCuaderno,
+        cuadernos: previo.cuadernos.map((c) =>
+          c.id === id ? { ...c, eliminado: true, modificado: Date.now() } : c,
+        ),
+      }))
+      alCambiar?.(id)
       try {
         await eliminarDocumento(id)
       } catch (error) {
         console.error('No se pudo eliminar el documento del cuaderno', error)
       }
     },
-    [aplicar],
+    [aplicar, alCambiar],
   )
 
-  /** La llama el lienzo tras guardar, para mantener la fecha y el contador al día. */
+  /** La llama el lienzo tras guardar en local. */
   const marcarActividad = useCallback(
     (id: string, numIdeas: number) => {
-      aplicar((previos) =>
-        previos.map((c) => (c.id === id ? { ...c, modificado: Date.now(), numIdeas } : c)),
-      )
+      aplicar((previo) => ({
+        ...previo,
+        cuadernos: previo.cuadernos.map((c) =>
+          c.id === id ? { ...c, modificado: Date.now(), numIdeas } : c,
+        ),
+      }))
+      alCambiar?.(id)
     },
-    [aplicar],
+    [aplicar, alCambiar],
   )
 
-  return { cuadernos, cargando, crear, renombrar, eliminar, alternarArchivado, marcarActividad }
+  /** Recuerda dónde se quedó el usuario, para retomarlo en otro dispositivo. */
+  const recordarUltimoCuaderno = useCallback(
+    (id: string | null) => {
+      setIndice((previo) => {
+        if (previo.ultimoCuaderno === id) return previo
+        const siguiente = { ...previo, ultimoCuaderno: id, actualizado: Date.now() }
+        escribirIndice(siguiente)
+        return siguiente
+      })
+    },
+    [],
+  )
+
+  return {
+    cuadernos,
+    ultimoCuaderno: indice.ultimoCuaderno ?? null,
+    crear,
+    renombrar,
+    eliminar,
+    alternarArchivado,
+    marcarActividad,
+    recordarUltimoCuaderno,
+    recargar,
+    sembrarSiVacio,
+  }
 }

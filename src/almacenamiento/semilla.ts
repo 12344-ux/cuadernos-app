@@ -101,7 +101,12 @@ export async function aplicarSemillaSiHaceFalta(): Promise<Cuaderno[] | null> {
   await guardarDocumento(biologia.id, demo)
 
   const cuadernos = [biologia, quimica]
-  escribirIndice({ version: 1, cuadernos })
+  escribirIndice({
+    version: 1,
+    cuadernos,
+    ultimoCuaderno: null,
+    actualizado: ahora,
+  })
   localStorage.setItem(CLAVE_SEMILLA, '1')
 
   return cuadernos
