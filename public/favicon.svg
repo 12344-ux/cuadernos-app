@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#4f46e5" />
+  <!-- Tres nodos conectados: el mapa mental reducido a su mínimo. -->
+  <path d="M16 11v4M16 15l-5 5M16 15l5 5" stroke="#c7d2fe" stroke-width="2" stroke-linecap="round" fill="none" />
+  <circle cx="16" cy="9" r="3" fill="#fff" />
+  <circle cx="10" cy="22" r="3" fill="#fff" />
+  <circle cx="22" cy="22" r="3" fill="#fff" />
+</svg>

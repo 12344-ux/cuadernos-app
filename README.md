@@ -29,10 +29,20 @@ npm run build    # comprobación de tipos + build de producción en dist/
 - El tipo `DocumentoCuaderno` (`src/tipos.ts`) es exactamente el JSON que se subirá a GitHub en la
   Fase 3, por eso se mantiene plano y sin campos efímeros.
 
+## Despliegue
+
+Cada empujón a `main` publica el sitio en GitHub Pages mediante
+`.github/workflows/desplegar.yml`. Requiere haber puesto **Settings → Pages → Source:
+GitHub Actions** una sola vez.
+
+La `base` de Vite es `'./'` (rutas relativas), así que el mismo build sirve tanto en
+`12344-ux.github.io/cuadernos-app/` como en un dominio propio desde la raíz. Para usar
+`cuadernos.xyz` hace falta añadir un archivo `public/CNAME` con el dominio y apuntar el DNS.
+
 ## Estado
 
-Fase 1 completada. Pendiente: panel de notas rápidas (Fase 2), sincronización con GitHub
-(Fase 3) y despliegue en GitHub Pages con dominio propio (Fase 4).
+Fase 1 completada y desplegada. Pendiente: panel de notas rápidas (Fase 2) y
+sincronización con GitHub (Fase 3).
 
 ## Licencias
 
