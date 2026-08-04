@@ -36,8 +36,18 @@ Cada empujón a `main` publica el sitio en GitHub Pages mediante
 GitHub Actions** una sola vez.
 
 La `base` de Vite es `'./'` (rutas relativas), así que el mismo build sirve tanto en
-`12344-ux.github.io/cuadernos-app/` como en un dominio propio desde la raíz. Para usar
-`cuadernos.xyz` hace falta añadir un archivo `public/CNAME` con el dominio y apuntar el DNS.
+`12344-ux.github.io/cuadernos-app/` como en un dominio propio desde la raíz, sin recompilar.
+
+### Dominio propio (cuadernos.xyz)
+
+El dominio se configura **solo** en Settings → Pages → Custom domain. No hace falta ningún
+archivo `CNAME` en el repositorio: [la documentación de GitHub](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site)
+indica que al publicar desde un workflow de Actions no se crea, y que cualquier `CNAME`
+existente se ignora.
+
+En el DNS, el dominio raíz necesita los cuatro registros `A` de GitHub Pages
+(`185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`). Para el
+subdominio `www`, un registro `CNAME` que apunte a `12344-ux.github.io`.
 
 ## Estado
 
