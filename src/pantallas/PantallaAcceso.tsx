@@ -7,7 +7,6 @@ type Props = {
   estado: Extract<EstadoSesion, 'sin-configurar' | 'bloqueado'>
   onConectar: (token: string, contrasena: string, recordar: boolean) => Promise<void>
   onDesbloquear: (contrasena: string) => Promise<void>
-  onUsarSinConectar: () => void
   onOlvidarCredencial: () => void
 }
 
@@ -15,7 +14,6 @@ export function PantallaAcceso({
   estado,
   onConectar,
   onDesbloquear,
-  onUsarSinConectar,
   onOlvidarCredencial,
 }: Props) {
   const [token, setToken] = useState('')
@@ -136,9 +134,15 @@ export function PantallaAcceso({
           </button>
         )}
 
-        <button type="button" className="enlace" onClick={onUsarSinConectar}>
-          Trabajar solo en este dispositivo
-        </button>
+        {/*
+          No hay forma de entrar sin contraseña. Antes existía un enlace para
+          "trabajar solo en este dispositivo" y era un agujero: permitía leer y
+          borrar los apuntes guardados sin conocer la contraseña.
+        */}
+        <p className="nota-acceso">
+          No hay acceso sin contraseña. Si estás en un computador compartido, recuerda cerrar
+          sesión marcando la casilla de borrado al terminar.
+        </p>
 
         {trabajando && !bloqueado && (
           <p className="nota-acceso">

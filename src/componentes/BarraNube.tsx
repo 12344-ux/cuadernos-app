@@ -13,7 +13,7 @@ type Props = {
   donde: DondeGuardar
   onSincronizar: () => void
   onCerrarSesion: (borrarDatos: boolean) => void
-  onConectar: () => void
+  onUsarOtroToken: () => void
 }
 
 export function BarraNube({
@@ -25,23 +25,12 @@ export function BarraNube({
   donde,
   onSincronizar,
   onCerrarSesion,
-  onConectar,
+  onUsarOtroToken,
 }: Props) {
   const [confirmando, setConfirmando] = useState(false)
   // Marcado por defecto: la app está pensada para equipos compartidos, donde
   // dejar los apuntes en el navegador es justamente lo que hay que evitar.
   const [borrarDatos, setBorrarDatos] = useState(true)
-
-  if (estadoSesion === 'local') {
-    return (
-      <div className="barra-nube">
-        <span className="pastilla pastilla-aviso">Solo en este dispositivo</span>
-        <button type="button" className="boton-secundario pequeno" onClick={onConectar}>
-          Conectar con la nube
-        </button>
-      </div>
-    )
-  }
 
   if (estadoSesion !== 'abierto') return null
 
@@ -76,6 +65,13 @@ export function BarraNube({
       >
         Guardar en la nube
       </button>
+
+      {/* Salida cuando el token caduca o se revoca, sin perder los apuntes locales. */}
+      {estadoNube === 'error' && (
+        <button type="button" className="boton-secundario pequeno" onClick={onUsarOtroToken}>
+          Usar otro token
+        </button>
+      )}
 
       {confirmando ? (
         <div className="confirmar-salida">

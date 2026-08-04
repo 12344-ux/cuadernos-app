@@ -20,6 +20,18 @@ import {
   type Conflicto,
 } from '../nube/sincronizacion'
 
+/**
+ * No existe un modo "solo local" sin contraseña a propósito.
+ *
+ * Lo hubo, y era un agujero: cualquiera que abriera la app en un equipo con
+ * datos guardados entraba sin contraseña y podía borrar materias. Esos borrados
+ * quedaban marcados como pendientes y los subía el propio dueño la siguiente
+ * vez que entraba, con su token. Se comprobó que ocurría de verdad.
+ *
+ * No hace falta como respaldo sin conexión: 'desbloquear' abre la sesión antes
+ * de sincronizar, así que con la contraseña se trabaja igual sin internet y los
+ * cambios quedan pendientes de subir.
+ */
 export type EstadoSesion =
   /** Comprobando si hay credencial guardada. */
   | 'cargando'
@@ -29,8 +41,6 @@ export type EstadoSesion =
   | 'bloqueado'
   /** Token en memoria y cliente listo. */
   | 'abierto'
-  /** El usuario decidió trabajar solo en este dispositivo. */
-  | 'local'
 
 export type EstadoNube = 'inactivo' | 'sincronizando' | 'sincronizado' | 'error'
 
@@ -107,12 +117,17 @@ export function useNube({ alActualizarIndice }: Opciones) {
       setEstadoNube('error')
       setMensaje(error instanceof Error ? error.message : 'Error al sincronizar.')
 
-      // Si el token dejó de servir, hay que volver a pedirlo: no tiene sentido
-      // seguir reintentando ni dejar creer que se está guardando en la nube.
+      /*
+       * Si el token dejó de servir se deja de intentar, pero NO se cierra la
+       * sesión ni se borra la credencial: eso dejaría al dueño sin acceso a sus
+       * propios apuntes guardados en este equipo justo cuando más los necesita.
+       * Se sigue trabajando en local y la barra ofrece cambiar el token.
+       */
       if (error instanceof ErrorAutenticacion) {
         clienteRef.current = null
-        olvidarCredencial()
-        setEstadoSesion('sin-configurar')
+        setMensaje(
+          'GitHub rechazó el token (puede haber caducado o estar revocado). Tus cambios se siguen guardando aquí. Pulsa "Usar otro token" para reconectar.',
+        )
       }
       return false
     } finally {
@@ -165,20 +180,6 @@ export function useNube({ alActualizarIndice }: Opciones) {
     },
     [ejecutarSincronizacion],
   )
-
-  const usarSinConectar = useCallback(() => {
-    setEstadoSesion('local')
-    setEstadoNube('inactivo')
-    setMensaje(null)
-  }, [])
-
-  /** Vuelve a la pantalla de acceso sin borrar nada de lo que hay en local. */
-  const volverAlAcceso = useCallback(() => {
-    clienteRef.current = null
-    setEstadoSesion(leerCredencial() ? 'bloqueado' : 'sin-configurar')
-    setEstadoNube('inactivo')
-    setMensaje(null)
-  }, [])
 
   /** "Usar otro token": olvida la credencial pero conserva los apuntes locales. */
   const olvidarCredencialGuardada = useCallback(() => {
@@ -274,8 +275,6 @@ export function useNube({ alActualizarIndice }: Opciones) {
     donde,
     conectar,
     desbloquear,
-    usarSinConectar,
-    volverAlAcceso,
     olvidarCredencialGuardada,
     cerrarSesion,
     resolverConflicto,

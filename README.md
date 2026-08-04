@@ -50,6 +50,21 @@ protege mientras la app está abierta, porque para llamar a la API tiene que est
 memoria. Por eso importa que el token esté limitado a un solo repositorio: en el peor caso se
 comprometen los apuntes, no la cuenta de GitHub.
 
+### No hay acceso sin contraseña
+
+Existió un enlace de "trabajar solo en este dispositivo" que entraba sin credenciales, y **era un
+agujero de seguridad comprobado**: en un equipo con datos guardados, cualquiera podía entrar sin
+contraseña, leer los apuntes y borrar materias. Peor aún, esos borrados quedaban marcados como
+pendientes y **los subía el propio dueño** la siguiente vez que entraba con su token.
+
+Se eliminó. No hace falta como respaldo sin conexión: `desbloquear()` abre la sesión *antes* de
+sincronizar, así que con la contraseña se trabaja igual sin internet y los cambios quedan
+pendientes de subir.
+
+Por el mismo motivo, un token rechazado (caducado o revocado) ya no cierra la sesión ni borra la
+credencial: eso dejaría al dueño sin acceso a sus propios apuntes locales. Se avisa en la barra y
+se ofrece **Usar otro token**.
+
 ### Equipos compartidos
 
 - **"Recordar en este dispositivo" viene sin marcar.** Sin marcarlo, el token cifrado va a
