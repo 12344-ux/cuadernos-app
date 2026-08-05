@@ -19,10 +19,8 @@ import {
   type NodeTypes,
   type Viewport,
 } from '@xyflow/react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { guardarDocumento } from '../almacenamiento/documentos'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { nuevoId } from '../almacenamiento/indice'
-import { irAlasFlashcards } from '../hooks/useRuta'
 import {
   PALETA,
   VERSION_DOCUMENTO,
@@ -55,10 +53,40 @@ const RETARDO_AUTOGUARDADO = 700
 /** Más holgado que el del contenido: mover la vista no tiene ninguna urgencia. */
 const RETARDO_GUARDADO_VISTA = 1500
 
+/**
+ * El lienzo no sabe a qué pertenece lo que dibuja.
+ *
+ * Recibe cómo guardar y a quién avisar, así que el mismo componente sirve para el
+ * mapa conceptual de una materia y para los apuntes de una clase. Lo que cambia
+ * entre los dos casos es el archivo de destino y los botones de la barra, no la
+ * mecánica del lienzo.
+ */
 type PropsLienzo = {
-  idCuaderno: string
   documentoInicial: DocumentoCuaderno
-  onGuardado: (numIdeas: number) => void
+  /** Escribe el documento donde corresponda. */
+  guardar: (documento: DocumentoCuaderno) => Promise<void>
+  /** Se llama tras guardar contenido, para anotar la actividad donde toque. */
+  onGuardado: (documento: DocumentoCuaderno) => void
+  /** Botones propios de quien monta el lienzo: navegación, vista partida… */
+  accionesExtra?: ReactNode
+  etiqueta?: string
+  ayuda?: string
+  etiquetaCrear?: string
+  /**
+   * Con dos lienzos en pantalla partida hay que apagar las teclas del que no
+   * está en uso: React Flow escucha Supr y Retroceso en el 'document', no en su
+   * contenedor, así que sin esto una pulsación borraría en los dos a la vez.
+   */
+  teclasActivas?: boolean
+  /**
+   * Cada vez que este valor cambia, se reencuadra el contenido.
+   *
+   * Hace falta porque al partir la vista el lienzo pasa de toda la pantalla a un
+   * tercio: la misma vista guardada deja el contenido fuera del recorte o debajo
+   * de la barra de herramientas. La primera vez no se reencuadra, para no pisar
+   * la vista con la que se abrió el documento.
+   */
+  senalDeReajuste?: number
 }
 
 /** Decide si un lote de cambios merece guardar en disco. */
@@ -73,7 +101,17 @@ function cambiosRelevantes(cambios: NodeChange<NodoCuaderno>[] | EdgeChange<Edge
   })
 }
 
-export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo) {
+export function Lienzo({
+  documentoInicial,
+  guardar: guardarDocumento,
+  onGuardado,
+  accionesExtra,
+  etiqueta = 'Lienzo del cuaderno',
+  ayuda = 'Doble clic en el fondo para crear · arrastra desde un borde para conectar · selecciona texto para darle formato',
+  etiquetaCrear = '+ Añadir cuadro',
+  teclasActivas = true,
+  senalDeReajuste,
+}: PropsLienzo) {
   const [nodes, setNodes, onNodesChange] = useNodesState<NodoCuaderno>(documentoInicial.nodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(documentoInicial.edges)
   const [estado, setEstado] = useState<EstadoGuardado>('inactivo')
@@ -95,6 +133,12 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
   const nodesRef = useRef(nodes)
   const edgesRef = useRef(edges)
   const onGuardadoRef = useRef(onGuardado)
+  /*
+   * También la función de guardar va por referencia: quien monta el lienzo suele
+   * pasarla en línea, y si figurara como dependencia el temporizador del
+   * autoguardado se reiniciaría en cada render y no llegaría a dispararse.
+   */
+  const guardarRef = useRef(guardarDocumento)
   /** Hay contenido modificado que todavía no se ha anunciado a la nube. */
   const contenidoSucioRef = useRef(false)
 
@@ -102,7 +146,8 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
     nodesRef.current = nodes
     edgesRef.current = edges
     onGuardadoRef.current = onGuardado
-  }, [nodes, edges, onGuardado])
+    guardarRef.current = guardarDocumento
+  }, [nodes, edges, onGuardado, guardarDocumento])
 
   const { screenToFlowPosition, fitView, getNode } = useReactFlow<NodoCuaderno>()
 
@@ -229,18 +274,18 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
     setEstado('guardando')
     try {
       const documento = construirDocumento()
-      await guardarDocumento(idCuaderno, documento)
+      await guardarRef.current(documento)
       contenidoSucioRef.current = false
       setEstado('guardado')
-      // Los post-its no cuentan como ideas: son notas sueltas, no conceptos de
-      // la estructura del mapa. Si contaran, el número de la tarjeta dejaría de
-      // decir cuántas ideas hay realmente conectadas.
-      onGuardadoRef.current(documento.nodes.filter((nodo) => nodo.type === 'texto').length)
+      // Se entrega el documento entero y no un número: qué se cuenta depende de
+      // para qué sirva el lienzo. El mapa cuenta ideas descartando los post-its;
+      // los apuntes de una clase cuentan todas las notas.
+      onGuardadoRef.current(documento)
     } catch (error) {
-      console.error('No se pudo guardar el cuaderno', error)
+      console.error('No se pudo guardar el lienzo', error)
       setEstado('error')
     }
-  }, [idCuaderno, construirDocumento])
+  }, [construirDocumento])
 
   /**
    * Guarda el documento sin anunciar actividad.
@@ -257,11 +302,11 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
    */
   const guardarVista = useCallback(async () => {
     try {
-      await guardarDocumento(idCuaderno, construirDocumento())
+      await guardarRef.current(construirDocumento())
     } catch (error) {
-      console.error('No se pudo guardar la vista del cuaderno', error)
+      console.error('No se pudo guardar la vista del lienzo', error)
     }
-  }, [idCuaderno, construirDocumento])
+  }, [construirDocumento])
 
   /*
    * Autoguardado con retardo. Depende solo de 'version', que se incrementa
@@ -302,6 +347,19 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
   useEffect(() => {
     precargarEditor()
   }, [])
+
+  /*
+   * Reencuadre a petición. Se salta la primera vez para no pisar la vista con la
+   * que se abrió el documento; a partir de ahí, cada cambio de la señal reencuadra.
+   */
+  const primerReajuste = useRef(true)
+  useEffect(() => {
+    if (primerReajuste.current) {
+      primerReajuste.current = false
+      return
+    }
+    void fitView({ padding: 0.25 })
+  }, [senalDeReajuste, fitView])
 
   /*
    * Guarda lo pendiente si se cierra la pestaña en medio del retardo. Se
@@ -368,15 +426,15 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
         // Clave para el objetivo de "cientos o miles de ideas": no monta en el
         // DOM los cuadros que quedan fuera de la pantalla.
         onlyRenderVisibleElements
-        deleteKeyCode={['Backspace', 'Delete']}
-        multiSelectionKeyCode={['Shift', 'Meta', 'Control']}
+        deleteKeyCode={teclasActivas ? ['Backspace', 'Delete'] : null}
+        multiSelectionKeyCode={teclasActivas ? ['Shift', 'Meta', 'Control'] : null}
         selectionOnDrag
         panOnDrag={[1, 2]}
         panOnScroll
         zoomOnDoubleClick={false}
         elevateNodesOnSelect
         proOptions={{ hideAttribution: true }}
-        aria-label="Lienzo del cuaderno"
+        aria-label={etiqueta}
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1.4} color="#d5d9e2" />
         <Controls showInteractive={false} />
@@ -391,7 +449,7 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
 
         <Panel position="top-left" className="panel-herramientas">
           <button type="button" className="boton-primario" onClick={() => crearNodo('texto')}>
-            + Añadir cuadro
+            {etiquetaCrear}
           </button>
           <button
             type="button"
@@ -404,21 +462,13 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
           <button type="button" className="boton-secundario" onClick={() => void fitView({ padding: 0.25 })}>
             Ajustar vista
           </button>
-          <button
-            type="button"
-            className="boton-flashcards"
-            title="Repasar esta materia con flashcards"
-            onClick={() => irAlasFlashcards(idCuaderno)}
-          >
-            Flashcards
-          </button>
+          {/* Los botones de navegación los pone quien monta el lienzo: así este
+              componente no necesita saber en qué pantalla está. */}
+          {accionesExtra}
         </Panel>
 
         <Panel position="bottom-center" className="panel-ayuda">
-          <span>
-            Doble clic en el fondo para crear · arrastra desde un borde para conectar · selecciona
-            texto para darle formato
-          </span>
+          <span>{ayuda}</span>
         </Panel>
       </ReactFlow>
 

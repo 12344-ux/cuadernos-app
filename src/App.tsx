@@ -8,6 +8,7 @@ import { irAlCuaderno, irAlSelector, useRuta } from './hooks/useRuta'
 import { PantallaAcceso } from './pantallas/PantallaAcceso'
 import { PantallaFlashcards } from './pantallas/PantallaFlashcards'
 import { PantallaHistorial } from './pantallas/PantallaHistorial'
+import { SeccionEstudioActivo } from './pantallas/SeccionEstudioActivo'
 import { SelectorCuadernos } from './pantallas/SelectorCuadernos'
 import { VistaCuaderno } from './pantallas/VistaCuaderno'
 
@@ -31,6 +32,7 @@ export default function App() {
     marcarActividad,
     marcarActividadMazos,
     marcarActividadAgenda,
+    marcarActividadClases,
     recordarUltimoCuaderno,
     recargar,
     sembrarSiVacio,
@@ -38,6 +40,7 @@ export default function App() {
     alCambiar: nube.anotarCambio,
     alCambiarMazos: nube.anotarCambioDeMazos,
     alCambiarAgenda: nube.anotarCambioDeAgenda,
+    alCambiarClases: nube.anotarCambioDeClases,
   })
 
   /*
@@ -92,7 +95,13 @@ export default function App() {
   useEffect(() => {
     if (!enUso) return
     // También cuenta estar en las flashcards: la materia es la misma.
-    const enMateria = ruta.tipo === 'cuaderno' || ruta.tipo === 'flashcards'
+    // Estar en las flashcards o en Estudio Activo también cuenta: la materia es
+    // la misma, y al volver desde otro dispositivo se quiere retomar ahí.
+    const enMateria =
+      ruta.tipo === 'cuaderno' ||
+      ruta.tipo === 'flashcards' ||
+      ruta.tipo === 'estudio' ||
+      ruta.tipo === 'clase'
     if (enMateria && cuadernos.some((c) => c.id === ruta.id)) {
       recordarUltimoCuaderno(ruta.id)
     }
@@ -137,7 +146,12 @@ export default function App() {
     )
   }
 
-  if (ruta.tipo === 'cuaderno' || ruta.tipo === 'flashcards') {
+  if (
+    ruta.tipo === 'cuaderno' ||
+    ruta.tipo === 'flashcards' ||
+    ruta.tipo === 'estudio' ||
+    ruta.tipo === 'clase'
+  ) {
     const cuaderno = cuadernos.find((c) => c.id === ruta.id)
 
     // El hash puede apuntar a una materia ya eliminada o de otra cuenta.
@@ -154,6 +168,18 @@ export default function App() {
 
     if (ruta.tipo === 'flashcards') {
       return <PantallaFlashcards cuaderno={cuaderno} onActividad={marcarActividadMazos} />
+    }
+
+    if (ruta.tipo === 'estudio' || ruta.tipo === 'clase') {
+      return (
+        <SeccionEstudioActivo
+          cuaderno={cuaderno}
+          idClaseAbierta={ruta.tipo === 'clase' ? ruta.idClase : null}
+          onActividadClases={marcarActividadClases}
+          onActividadApuntes={nube.anotarCambioDeApuntes}
+          onActividadMapa={marcarActividad}
+        />
+      )
     }
 
     return <VistaCuaderno cuaderno={cuaderno} onActividad={marcarActividad} barraNube={barra} />

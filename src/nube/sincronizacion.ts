@@ -6,18 +6,32 @@ import {
 import {
   hayAgendaPendiente,
   limpiarAgendaPendiente,
+  limpiarApuntesPendiente,
+  limpiarClasesPendiente,
   limpiarMazosPendiente,
   limpiarPendiente,
+  leerApuntesPendientes,
+  leerClasesPendientes,
   leerMazosPendientes,
   leerPendientes,
   leerShas,
   marcarAgendaPendiente,
+  marcarApuntesPendiente,
+  marcarClasesPendiente,
   marcarMazosPendiente,
   marcarPendiente,
   olvidarSha,
   recordarSha,
   registrarSincronizacion,
 } from '../almacenamiento/estadoNube'
+import { apuntesDeClase } from '../almacenamiento/apuntes'
+import {
+  cargarClases,
+  eliminarClases,
+  guardarClases,
+  normalizarIndiceClases,
+} from '../almacenamiento/clases'
+import { VERSION_CLASES, type Clase, type IndiceClases } from '../clases/tipos'
 import { VERSION_AGENDA, type DocumentoAgenda, type Tarea } from '../agenda/tipos'
 import { cargarAgenda, guardarAgenda, normalizarAgenda } from '../almacenamiento/agenda'
 import { cargarMazos, eliminarMazos, guardarMazos, normalizarDocumentoMazos } from '../almacenamiento/mazos'
@@ -35,7 +49,14 @@ import {
   type DocumentoCuaderno,
   type IndiceCuadernos,
 } from '../tipos'
-import { RUTA_AGENDA, RUTA_INDICE, rutaMateria, rutaMazos } from './configuracion'
+import {
+  RUTA_AGENDA,
+  RUTA_INDICE,
+  rutaApuntes,
+  rutaClases,
+  rutaMateria,
+  rutaMazos,
+} from './configuracion'
 import { ClienteGitHub, ErrorConflicto } from './github'
 
 export type ResultadoSincronizacion = {
@@ -130,6 +151,59 @@ export function fusionarAgendas(
   }
 
   return { version: VERSION_AGENDA, tareas: [...porId.values()] }
+}
+
+function interpretarClases(contenido: string): IndiceClases | null {
+  try {
+    return normalizarIndiceClases(JSON.parse(contenido))
+  } catch (error) {
+    console.error('La lista de clases remota no se pudo interpretar', error)
+    return null
+  }
+}
+
+/**
+ * Combina la misma clase vista por dos dispositivos.
+ *
+ * Las dos fechas se resuelven por separado, igual que con las materias: el nombre
+ * y el día vienen del lado que los editó más tarde, y la recencia de los apuntes
+ * del lado que escribió apuntes más tarde. Si se compararan juntas, renombrar una
+ * clase en un dispositivo tumbaría la marca de apuntes escritos en el otro, y esos
+ * apuntes no se bajarían nunca.
+ */
+function fusionarClase(a: Clase, b: Clase): Clase {
+  let base: Clase
+  if (b.modificado > a.modificado) base = b
+  else if (a.modificado > b.modificado) base = a
+  // A igualdad de fecha manda la lápida, como en las materias.
+  else base = b.eliminada ? b : a
+
+  const conApuntes = b.notasModificado > a.notasModificado ? b : a
+
+  return {
+    ...base,
+    notasModificado: conApuntes.notasModificado,
+    numNotas: conApuntes.numNotas,
+  }
+}
+
+export function fusionarIndiceClases(
+  local: IndiceClases,
+  remoto: IndiceClases,
+  ganaLocal: boolean,
+): IndiceClases {
+  const preferido = ganaLocal ? local : remoto
+  const otro = ganaLocal ? remoto : local
+
+  const porId = new Map<string, Clase>()
+  for (const clase of otro.clases ?? []) porId.set(clase.id, clase)
+
+  for (const clase of preferido.clases ?? []) {
+    const previa = porId.get(clase.id)
+    porId.set(clase.id, previa ? fusionarClase(previa, clase) : clase)
+  }
+
+  return { version: VERSION_CLASES, clases: [...porId.values()] }
 }
 
 function interpretarMazos(contenido: string): DocumentoMazos | null {
@@ -241,6 +315,8 @@ function fusionarEntrada(a: Cuaderno, b: Cuaderno): Cuaderno {
     ...base,
     mazosModificado: conMazos.mazosModificado ?? 0,
     numTarjetas: conMazos.numTarjetas ?? 0,
+    // La lista de clases es un tercer archivo con su propia recencia.
+    clasesModificado: Math.max(a.clasesModificado ?? 0, b.clasesModificado ?? 0),
   }
 }
 
@@ -335,6 +411,7 @@ export async function sincronizar(cliente: ClienteGitHub): Promise<ResultadoSinc
           }
         }
       }
+      await borrarClasesDeMateria(cliente, cuaderno, Boolean(entradaRemota && !entradaRemota.eliminado))
       await eliminarDocumento(cuaderno.id)
       await eliminarMazos(cuaderno.id)
       olvidarSha(rutaMateria(cuaderno.id))
@@ -397,6 +474,8 @@ export async function sincronizar(cliente: ClienteGitHub): Promise<ResultadoSinc
       ),
       `flashcards de ${cuaderno.nombre}`,
     )
+
+    await sincronizarClases(cliente, cuaderno, entradaLocal, entradaRemota, anotar)
   }
 
   /*
@@ -432,6 +511,124 @@ export async function sincronizar(cliente: ClienteGitHub): Promise<ResultadoSinc
   registrarSincronizacion()
 
   return { indice: indiceFinal, bajadas, subidas, fusionadas }
+}
+
+/**
+ * Sincroniza las clases de una materia: primero la lista y después los apuntes de
+ * cada clase, que son un archivo aparte.
+ *
+ * La gracia está en cómo se decide la dirección de cada archivo de apuntes sin
+ * gastar una petición por clase. Se guarda la lista local *antes* de sincronizarla
+ * y se compara con la lista ya fusionada: como la fusión se queda con la
+ * 'notasModificado' más alta de los dos lados, si la fusionada supera a la que
+ * teníamos es que el otro dispositivo escribió apuntes más tarde. Y si coincide,
+ * no hay nada que bajar.
+ *
+ * Con eso, una materia con cuarenta clases en la que hoy solo se tocó una cuesta
+ * dos peticiones, no cuarenta: las clases sin cambios no llegan a pedirse.
+ */
+async function sincronizarClases(
+  cliente: ClienteGitHub,
+  cuaderno: Cuaderno,
+  entradaLocal: Cuaderno | undefined,
+  entradaRemota: Cuaderno | undefined,
+  anotar: (desenlace: Desenlace, nombre: string) => void,
+): Promise<void> {
+  const clasesPendientes = new Set(leerClasesPendientes())
+  const apuntesPendientes = new Set(leerApuntesPendientes())
+
+  const antes = await cargarClases(cuaderno.id)
+  const notasAntes = new Map(antes.clases.map((clase) => [clase.id, clase.notasModificado]))
+
+  anotar(
+    await sincronizarArchivo(
+      cliente,
+      {
+        ruta: rutaClases(cuaderno.id),
+        etiqueta: `clases de ${cuaderno.nombre}`,
+        cargar: () => cargarClases(cuaderno.id),
+        guardar: (indice) => guardarClases(cuaderno.id, indice),
+        interpretar: interpretarClases,
+        fusionar: fusionarIndiceClases,
+        quitarPendiente: () => limpiarClasesPendiente(cuaderno.id),
+      },
+      {
+        tienePendiente: clasesPendientes.has(cuaderno.id),
+        remotoEsMasNuevo: Boolean(
+          entradaRemota &&
+            (entradaRemota.clasesModificado ?? 0) > (entradaLocal?.clasesModificado ?? 0),
+        ),
+        ganaLocal:
+          (entradaLocal?.clasesModificado ?? 0) >= (entradaRemota?.clasesModificado ?? 0),
+      },
+    ),
+    `clases de ${cuaderno.nombre}`,
+  )
+
+  // La lista local ya es la fusionada; de ahí sale qué apuntes hay que mirar.
+  const despues = await cargarClases(cuaderno.id)
+
+  for (const clase of despues.clases) {
+    if (clase.eliminada) {
+      await apuntesDeClase.eliminar(clase.id)
+      olvidarSha(rutaApuntes(clase.id))
+      limpiarApuntesPendiente(clase.id)
+      continue
+    }
+
+    const remotoEsMasNuevo = clase.notasModificado > (notasAntes.get(clase.id) ?? 0)
+
+    anotar(
+      await sincronizarArchivo(
+        cliente,
+        {
+          ruta: rutaApuntes(clase.id),
+          etiqueta: `apuntes de ${clase.nombre}`,
+          cargar: () => apuntesDeClase.cargar(clase.id),
+          guardar: (documento) => apuntesDeClase.guardar(clase.id, documento),
+          interpretar: interpretarDocumento,
+          // Los apuntes son un documento de lienzo, así que se combinan con la
+          // misma función que los mapas: unión de notas por identificador.
+          fusionar: fusionarDocumentos,
+          quitarPendiente: () => limpiarApuntesPendiente(clase.id),
+        },
+        {
+          tienePendiente: apuntesPendientes.has(clase.id),
+          remotoEsMasNuevo,
+          ganaLocal: !remotoEsMasNuevo,
+        },
+      ),
+      `apuntes de ${clase.nombre}`,
+    )
+  }
+}
+
+/** Al eliminar una materia se van también su lista de clases y todos sus apuntes. */
+async function borrarClasesDeMateria(
+  cliente: ClienteGitHub,
+  cuaderno: Cuaderno,
+  borrarEnRemoto: boolean,
+): Promise<void> {
+  const indice = await cargarClases(cuaderno.id)
+  const rutas = [rutaClases(cuaderno.id), ...indice.clases.map((clase) => rutaApuntes(clase.id))]
+
+  if (borrarEnRemoto) {
+    for (const ruta of rutas) {
+      const actual = await cliente.leerArchivo(ruta)
+      if (actual) {
+        await cliente.eliminarArchivo(ruta, actual.sha, `Eliminar ${cuaderno.nombre}`)
+      }
+    }
+  }
+
+  for (const clase of indice.clases) {
+    await apuntesDeClase.eliminar(clase.id)
+    limpiarApuntesPendiente(clase.id)
+  }
+  for (const ruta of rutas) olvidarSha(ruta)
+
+  await eliminarClases(cuaderno.id)
+  limpiarClasesPendiente(cuaderno.id)
 }
 
 /**
@@ -602,4 +799,14 @@ export function anotarCambioMazos(idCuaderno: string): void {
 /** Y para la agenda, de la que solo hay una. */
 export function anotarCambioAgenda(): void {
   marcarAgendaPendiente()
+}
+
+/** La lista de clases de una materia. */
+export function anotarCambioClases(idCuaderno: string): void {
+  marcarClasesPendiente(idCuaderno)
+}
+
+/** Los apuntes de una clase concreta. */
+export function anotarCambioApuntes(idClase: string): void {
+  marcarApuntesPendiente(idClase)
 }

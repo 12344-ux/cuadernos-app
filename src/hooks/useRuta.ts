@@ -11,6 +11,8 @@ export type Ruta =
   | { tipo: 'selector' }
   | { tipo: 'cuaderno'; id: string }
   | { tipo: 'flashcards'; id: string }
+  | { tipo: 'estudio'; id: string }
+  | { tipo: 'clase'; id: string; idClase: string }
   | { tipo: 'agenda' }
 
 function analizar(hash: string): Ruta {
@@ -21,6 +23,11 @@ function analizar(hash: string): Ruta {
     const id = decodeURIComponent(partes[1])
     // Las flashcards cuelgan de la materia: #/c/<id>/flashcards
     if (partes[2] === 'flashcards') return { tipo: 'flashcards', id }
+    // Estudio Activo: la lista de clases y, un nivel más abajo, una clase.
+    if (partes[2] === 'estudio') {
+      if (partes[3]) return { tipo: 'clase', id, idClase: decodeURIComponent(partes[3]) }
+      return { tipo: 'estudio', id }
+    }
     return { tipo: 'cuaderno', id }
   }
   return { tipo: 'selector' }
@@ -52,4 +59,12 @@ export function irAlasFlashcards(id: string): void {
 
 export function irALaAgenda(): void {
   window.location.hash = '#/agenda'
+}
+
+export function irAlEstudioActivo(id: string): void {
+  window.location.hash = `#/c/${encodeURIComponent(id)}/estudio`
+}
+
+export function irALaClase(id: string, idClase: string): void {
+  window.location.hash = `#/c/${encodeURIComponent(id)}/estudio/${encodeURIComponent(idClase)}`
 }

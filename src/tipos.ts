@@ -148,6 +148,12 @@ export type Cuaderno = {
   /** Cache del número de tarjetas, para la tarjeta de la materia. */
   numTarjetas?: number
   /**
+   * Fecha de modificación de la lista de clases de Estudio Activo, que también
+   * vive en su propio archivo. La de los apuntes de cada clase va dentro de esa
+   * lista, no aquí.
+   */
+  clasesModificado?: number
+  /**
    * Lápida de borrado. Una materia eliminada no se quita del índice, se marca:
    * si se borrara sin más, al sincronizar volvería desde otro dispositivo que
    * todavía la tuviera. Se oculta de la interfaz y su archivo remoto se elimina.

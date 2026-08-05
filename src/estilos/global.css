@@ -297,6 +297,12 @@ button {
   gap: 0.4rem;
 }
 
+/* Sin esto, en un panel estrecho las etiquetas se parten por la mitad
+   ("+ Post-" / "it") y los botones se montan unos sobre otros. */
+.panel-herramientas button {
+  white-space: nowrap;
+}
+
 .panel-ayuda {
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid var(--linea);
@@ -1714,4 +1720,226 @@ button[disabled] {
   .acciones-tarea {
     opacity: 1;
   }
+}
+
+
+/* =========================================================================
+   Estudio Activo: apuntes por clase
+   ========================================================================= */
+
+.lista-clases {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.fila-clase {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 0.8rem 1rem;
+  transition: border-color 0.15s;
+}
+
+.fila-clase:hover {
+  border-color: #cbd5e1;
+}
+
+.fila-clase-datos {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.nombre-clase {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--tinta);
+  text-align: left;
+}
+
+.nombre-clase:hover {
+  color: var(--acento);
+}
+
+.clase-detalle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: var(--tinta-suave);
+}
+
+.acciones-clase {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.crear-clase {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.1rem;
+}
+
+.crear-clase .entrada-nombre {
+  flex: 1 1 16rem;
+}
+
+/* El botón que lleva a Estudio Activo, y el que parte la vista. */
+.boton-estudio {
+  border-radius: var(--radio);
+  border: 1px solid #ddd6fe;
+  padding: 0.5rem 0.9rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  background: #f5f3ff;
+  color: #5b21b6;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.boton-estudio:hover {
+  background: #ede9fe;
+  border-color: #c4b5fd;
+}
+
+/* ---------- La clase abierta y la vista partida ---------- */
+
+.vista-clase {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.cuerpo-clase {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+
+/*
+ * En vista partida se pasa a rejilla de tres columnas: apuntes, divisor y mapa.
+ * El ancho de la primera lo fija el estilo en línea, que es lo que mueve el
+ * divisor; 'auto' deja que el divisor mida lo que mide y '1fr' da el resto al
+ * mapa, que es el que interesa tener ancho.
+ */
+.cuerpo-clase.partida {
+  display: grid;
+}
+
+.panel-lienzo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.cuerpo-clase.partida .panel-lienzo {
+  border-top: 1px solid var(--linea);
+}
+
+.titulo-panel {
+  margin: 0;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+  background: var(--superficie);
+  border-bottom: 1px solid var(--linea);
+}
+
+.divisor {
+  position: relative;
+  width: 10px;
+  cursor: col-resize;
+  background: var(--linea);
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+}
+
+.divisor:hover,
+.divisor:focus-visible {
+  background: #c7d2fe;
+  outline: none;
+}
+
+/* Una marca para que se vea que se puede arrastrar. */
+.divisor-agarre {
+  width: 2px;
+  height: 2.2rem;
+  border-radius: 999px;
+  background: var(--superficie);
+  box-shadow: 3px 0 0 var(--superficie), -3px 0 0 var(--superficie);
+}
+
+/*
+ * Mientras se arrastra el divisor, el cursor manda en toda la página y no se
+ * selecciona texto: sin esto, al pasar por encima de los apuntes se iban
+ * seleccionando párrafos.
+ */
+body.arrastrando-divisor {
+  cursor: col-resize;
+  user-select: none;
+}
+
+/* ---------- Ajustes de los lienzos cuando la vista está partida ---------- */
+
+/*
+ * El panel de la izquierda puede quedarse en poco más de 200 px, así que la barra
+ * se compacta y, si aún no cabe, se desplaza en horizontal en lugar de repartirse
+ * en varias filas encima de los apuntes.
+ */
+.cuerpo-clase.partida .panel-herramientas {
+  flex-wrap: nowrap;
+  max-width: calc(100% - 1rem);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.cuerpo-clase.partida .panel-herramientas::-webkit-scrollbar {
+  display: none;
+}
+
+.cuerpo-clase.partida .panel-herramientas button {
+  font-size: 0.78rem;
+  padding: 0.35rem 0.55rem;
+}
+
+/*
+ * El aviso de guardado se va abajo a la derecha: arriba choca con la barra de
+ * herramientas en cuanto el panel se estrecha. Abajo queda libre, porque en
+ * pantalla partida se oculta el minimapa.
+ */
+.cuerpo-clase.partida .estado-guardado {
+  top: auto;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.66rem;
+}
+
+.cuerpo-clase.partida .panel-ayuda {
+  display: none;
+}
+
+.cuerpo-clase.partida .react-flow__minimap {
+  display: none;
 }

@@ -26,6 +26,21 @@ export function rutaMazos(idCuaderno: string): string {
   return `mazos/${idCuaderno}.json`
 }
 
+/** La lista de clases de una materia: solo metadatos, sin apuntes. */
+export function rutaClases(idCuaderno: string): string {
+  return `clases/${idCuaderno}.json`
+}
+
+/**
+ * Los apuntes de una clase, en un archivo por clase y no todos juntos por
+ * materia. Así escribir los apuntes de hoy no reescribe los de todo el semestre
+ * en cada commit; y las clases que no han cambiado no cuestan ninguna petición,
+ * porque su fecha de modificación viaja en la lista.
+ */
+export function rutaApuntes(idClase: string): string {
+  return `apuntes/${idClase}.json`
+}
+
 /**
  * Red de seguridad: cada cuánto se revisa si quedó algo pendiente por subir.
  * La subida normal no espera a esto, la dispara RETARDO_SUBIDA_MS.
