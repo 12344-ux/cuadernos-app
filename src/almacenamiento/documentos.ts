@@ -15,10 +15,6 @@ import {
 } from '../tipos'
 import * as idb from './idb'
 
-function clave(idCuaderno: string): string {
-  return `doc:${idCuaderno}`
-}
-
 /**
  * Quita los campos efímeros que React Flow añade en tiempo de ejecución
  * (selección, arrastre, medidas internas). Guardarlos ensucia el JSON y
@@ -121,23 +117,58 @@ function normalizar(documento: DocumentoCuaderno): DocumentoCuaderno {
   }
 }
 
-export async function cargarDocumento(idCuaderno: string): Promise<DocumentoCuaderno> {
-  const guardado = await idb.leer<DocumentoCuaderno>(clave(idCuaderno))
-  return guardado ? normalizar(guardado) : documentoVacio()
+export type AlmacenDocumentos = {
+  cargar: (id: string) => Promise<DocumentoCuaderno>
+  guardar: (id: string, documento: DocumentoCuaderno) => Promise<void>
+  eliminar: (id: string) => Promise<void>
+  /** Interpreta un documento venido de la nube, saneándolo y normalizándolo. */
+  normalizar: (datos: unknown) => DocumentoCuaderno
 }
 
-export async function guardarDocumento(
-  idCuaderno: string,
-  documento: DocumentoCuaderno,
-): Promise<void> {
-  await idb.escribir<DocumentoCuaderno>(clave(idCuaderno), {
-    ...documento,
-    version: VERSION_DOCUMENTO,
-    nodes: limpiarNodos(documento.nodes),
-    edges: limpiarAristas(documento.edges),
-  })
+/**
+ * Construye un almacén de documentos de lienzo bajo un prefijo de clave.
+ *
+ * Hay dos clases de lienzo que guardan el mismo tipo de documento: el mapa
+ * conceptual de una materia y los apuntes de una clase. Comparten normalización,
+ * saneado y limpieza de campos efímeros, y solo se diferencian en la clave con la
+ * que se guardan. La alternativa era duplicar todo este archivo con otro prefijo.
+ *
+ * IndexedDB es un almacén clave-valor sin índices, así que añadir un prefijo no
+ * exige ninguna migración del esquema.
+ */
+export function crearAlmacenDocumentos(prefijo: string): AlmacenDocumentos {
+  const clave = (id: string) => `${prefijo}:${id}`
+
+  return {
+    async cargar(id) {
+      const guardado = await idb.leer<DocumentoCuaderno>(clave(id))
+      return guardado ? normalizar(guardado) : documentoVacio()
+    },
+
+    async guardar(id, documento) {
+      await idb.escribir<DocumentoCuaderno>(clave(id), {
+        ...documento,
+        version: VERSION_DOCUMENTO,
+        nodes: limpiarNodos(documento.nodes),
+        edges: limpiarAristas(documento.edges),
+      })
+    },
+
+    async eliminar(id) {
+      await idb.eliminar(clave(id))
+    },
+
+    normalizar: (datos) => normalizar(datos as DocumentoCuaderno),
+  }
 }
 
-export async function eliminarDocumento(idCuaderno: string): Promise<void> {
-  await idb.eliminar(clave(idCuaderno))
-}
+/**
+ * El mapa conceptual de cada materia. Mantiene el prefijo 'doc' con el que se
+ * guardaron los cuadernos desde la primera versión, para no invalidar lo que ya
+ * hay en los dispositivos.
+ */
+export const documentosDeMateria = crearAlmacenDocumentos('doc')
+
+export const cargarDocumento = documentosDeMateria.cargar
+export const guardarDocumento = documentosDeMateria.guardar
+export const eliminarDocumento = documentosDeMateria.eliminar

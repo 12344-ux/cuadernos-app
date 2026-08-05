@@ -40,6 +40,7 @@ export function normalizarIndice(datos: unknown): IndiceCuadernos {
         numIdeas: Number(c.numIdeas) || 0,
         mazosModificado: Number(c.mazosModificado) || 0,
         numTarjetas: Number(c.numTarjetas) || 0,
+        clasesModificado: Number(c.clasesModificado) || 0,
         ...(c.eliminado ? { eliminado: true as const } : {}),
       }),
     ),

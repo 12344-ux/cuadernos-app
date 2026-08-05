@@ -16,6 +16,8 @@ const CLAVE_PENDIENTES = 'cuadernos:pendientes'
  */
 const CLAVE_PENDIENTES_MAZOS = 'cuadernos:pendientes-mazos'
 const CLAVE_PENDIENTE_AGENDA = 'cuadernos:pendiente-agenda'
+const CLAVE_PENDIENTES_CLASES = 'cuadernos:pendientes-clases'
+const CLAVE_PENDIENTES_APUNTES = 'cuadernos:pendientes-apuntes'
 const CLAVE_ULTIMA_SYNC = 'cuadernos:ultima-sincronizacion'
 
 function leerJson<T>(clave: string, porDefecto: T): T {
@@ -85,6 +87,45 @@ export function limpiarAgendaPendiente(): void {
   localStorage.removeItem(CLAVE_PENDIENTE_AGENDA)
 }
 
+/** Materias cuya lista de clases tiene cambios sin subir. */
+export function leerClasesPendientes(): string[] {
+  return leerJson<string[]>(CLAVE_PENDIENTES_CLASES, [])
+}
+
+export function marcarClasesPendiente(idCuaderno: string): void {
+  const pendientes = new Set(leerClasesPendientes())
+  pendientes.add(idCuaderno)
+  escribirJson(CLAVE_PENDIENTES_CLASES, [...pendientes])
+}
+
+export function limpiarClasesPendiente(idCuaderno: string): void {
+  escribirJson(
+    CLAVE_PENDIENTES_CLASES,
+    leerClasesPendientes().filter((id) => id !== idCuaderno),
+  )
+}
+
+/**
+ * Clases cuyos apuntes tienen cambios sin subir. Se indexan por identificador de
+ * clase, no de materia, porque cada clase es un archivo.
+ */
+export function leerApuntesPendientes(): string[] {
+  return leerJson<string[]>(CLAVE_PENDIENTES_APUNTES, [])
+}
+
+export function marcarApuntesPendiente(idClase: string): void {
+  const pendientes = new Set(leerApuntesPendientes())
+  pendientes.add(idClase)
+  escribirJson(CLAVE_PENDIENTES_APUNTES, [...pendientes])
+}
+
+export function limpiarApuntesPendiente(idClase: string): void {
+  escribirJson(
+    CLAVE_PENDIENTES_APUNTES,
+    leerApuntesPendientes().filter((id) => id !== idClase),
+  )
+}
+
 /** Materias cuyos mazos tienen cambios que aún no están en la nube. */
 export function leerMazosPendientes(): string[] {
   return leerJson<string[]>(CLAVE_PENDIENTES_MAZOS, [])
@@ -104,7 +145,13 @@ export function limpiarMazosPendiente(idCuaderno: string): void {
 }
 
 export function hayPendientes(): boolean {
-  return leerPendientes().length > 0 || leerMazosPendientes().length > 0 || hayAgendaPendiente()
+  return (
+    leerPendientes().length > 0 ||
+    leerMazosPendientes().length > 0 ||
+    leerClasesPendientes().length > 0 ||
+    leerApuntesPendientes().length > 0 ||
+    hayAgendaPendiente()
+  )
 }
 
 export function leerUltimaSincronizacion(): number | null {
@@ -122,5 +169,7 @@ export function borrarEstadoNube(): void {
   localStorage.removeItem(CLAVE_PENDIENTES)
   localStorage.removeItem(CLAVE_PENDIENTES_MAZOS)
   localStorage.removeItem(CLAVE_PENDIENTE_AGENDA)
+  localStorage.removeItem(CLAVE_PENDIENTES_CLASES)
+  localStorage.removeItem(CLAVE_PENDIENTES_APUNTES)
   localStorage.removeItem(CLAVE_ULTIMA_SYNC)
 }

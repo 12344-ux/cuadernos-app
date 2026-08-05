@@ -14,6 +14,8 @@ import {
 import { ClienteGitHub, ErrorAutenticacion } from '../nube/github'
 import {
   anotarCambioAgenda,
+  anotarCambioApuntes,
+  anotarCambioClases,
   anotarCambioLocal,
   anotarCambioMazos,
   sincronizar,
@@ -253,6 +255,26 @@ export function useNube({ alActualizarIndice }: Opciones) {
     programarSubida()
   }, [programarSubida])
 
+  /** La lista de clases de una materia. */
+  const anotarCambioDeClases = useCallback(
+    (idCuaderno: string) => {
+      anotarCambioClases(idCuaderno)
+      setPendientes(true)
+      programarSubida()
+    },
+    [programarSubida],
+  )
+
+  /** Los apuntes de una clase, que van en su propio archivo. */
+  const anotarCambioDeApuntes = useCallback(
+    (idClase: string) => {
+      anotarCambioApuntes(idClase)
+      setPendientes(true)
+      programarSubida()
+    },
+    [programarSubida],
+  )
+
   // Red de seguridad periódica, por si una subida falló y quedó algo pendiente.
   useEffect(() => {
     if (estadoSesion !== 'abierto') return
@@ -304,6 +326,8 @@ export function useNube({ alActualizarIndice }: Opciones) {
     anotarCambio,
     anotarCambioDeMazos,
     anotarCambioDeAgenda,
+    anotarCambioDeClases,
+    anotarCambioDeApuntes,
     sincronizarAhora: ejecutarSincronizacion,
   }
 }

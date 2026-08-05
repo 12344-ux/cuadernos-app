@@ -1,8 +1,8 @@
 import { ReactFlowProvider } from '@xyflow/react'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { cargarDocumento } from '../almacenamiento/documentos'
+import { cargarDocumento, guardarDocumento } from '../almacenamiento/documentos'
 import { Lienzo } from '../componentes/Lienzo'
-import { irAlSelector } from '../hooks/useRuta'
+import { irAlEstudioActivo, irAlSelector, irAlasFlashcards } from '../hooks/useRuta'
 import type { Cuaderno, DocumentoCuaderno } from '../tipos'
 
 type Props = {
@@ -37,8 +37,18 @@ export function VistaCuaderno({ cuaderno, barraNube, onActividad }: Props) {
     }
   }, [cuaderno.id])
 
+  const guardar = useCallback(
+    (nuevo: DocumentoCuaderno) => guardarDocumento(cuaderno.id, nuevo),
+    [cuaderno.id],
+  )
+
   const alGuardado = useCallback(
-    (numIdeas: number) => onActividad(cuaderno.id, numIdeas),
+    (nuevo: DocumentoCuaderno) => {
+      // Los post-its no cuentan como ideas: son notas sueltas, no conceptos de
+      // la estructura del mapa. Si contaran, el número de la tarjeta dejaría de
+      // decir cuántas ideas hay realmente conectadas.
+      onActividad(cuaderno.id, nuevo.nodes.filter((nodo) => nodo.type === 'texto').length)
+    },
     [cuaderno.id, onActividad],
   )
 
@@ -72,9 +82,30 @@ export function VistaCuaderno({ cuaderno, barraNube, onActividad }: Props) {
         // React reutilizaría el estado del cuaderno anterior.
         <ReactFlowProvider key={cuaderno.id}>
           <Lienzo
-            idCuaderno={cuaderno.id}
             documentoInicial={documento}
+            guardar={guardar}
             onGuardado={alGuardado}
+            etiqueta={`Mapa conceptual de ${cuaderno.nombre}`}
+            accionesExtra={
+              <>
+                <button
+                  type="button"
+                  className="boton-flashcards"
+                  title="Repasar esta materia con flashcards"
+                  onClick={() => irAlasFlashcards(cuaderno.id)}
+                >
+                  Flashcards
+                </button>
+                <button
+                  type="button"
+                  className="boton-estudio"
+                  title="Apuntes por clase de esta materia"
+                  onClick={() => irAlEstudioActivo(cuaderno.id)}
+                >
+                  Estudio Activo
+                </button>
+              </>
+            }
           />
         </ReactFlowProvider>
       ) : (

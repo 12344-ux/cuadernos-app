@@ -78,6 +78,47 @@ Dos campos de cada tarea no se ven pero hacen falta:
 - **`eliminada`** es una lápida, igual que en el índice de materias. Si la tarea se quitara del
   archivo sin más, al sincronizar con un dispositivo que todavía la tuviera reaparecería.
 
+## Estudio Activo
+
+Los apuntes de cada materia, **organizados por clases**. Se entra con el botón **Estudio Activo** del
+lienzo (`#/c/<id>/estudio`). Cada clase tiene nombre, fecha y su propio **lienzo infinito de notas**:
+se anota en cualquier parte, no de arriba hacia abajo, que es lo que hace falta para capturar cosas
+rápido mientras la clase avanza.
+
+Es el mismo motor que el mapa conceptual, con la misma barra de formato de texto. Las flechas siguen
+disponibles por si quieres unir dos notas, aunque aquí no son el punto.
+
+### Ver en mapa
+
+Desde los apuntes, **Ver en mapa** parte la pantalla: los apuntes se quedan en una franja estrecha a
+la izquierda y el mapa de la materia ocupa el resto. El divisor se arrastra (también con las flechas
+del teclado) y **la proporción se recuerda en el dispositivo**, no se sincroniza: depende del tamaño
+de tu pantalla, no de tus apuntes. Por debajo de 800 px de ancho el botón no aparece, porque dos
+lienzos de 200 px no sirven de nada.
+
+Dos detalles que hubo que resolver para que la pantalla partida funcione de verdad:
+
+- **Las teclas se aíslan por panel.** React Flow escucha `Supr` en el `document`, no en su contenedor,
+  así que con dos lienzos montados una pulsación borraba en los dos a la vez. Ahora solo responde el
+  panel donde pulsaste por última vez.
+- **Al partir se reencuadra el panel de notas.** Pasar de toda la pantalla a un tercio deja la vista
+  guardada apuntando a un sitio que ya no se ve, y las notas quedaban detrás de la barra.
+
+### Cómo se guarda
+
+Un archivo por clase, no uno por materia con todas dentro: así escribir los apuntes de hoy no
+reescribe los de todo el semestre en cada commit. Y no sale caro en peticiones, porque la lista de
+clases lleva la fecha de modificación de cada una: **una materia con cuarenta clases donde hoy solo se
+tocó una cuesta dos peticiones, no cuarenta.** Las clases sin cambios no llegan a pedirse.
+
+Cada clase guarda dos fechas que se resuelven por separado al sincronizar: una para el nombre y el día,
+y otra para los apuntes. Si se compararan juntas, renombrar una clase en un dispositivo tumbaría la
+marca de apuntes escritos en el otro y esos apuntes no se bajarían nunca.
+
+Los apuntes son un `DocumentoCuaderno`, el mismo tipo que el mapa, así que heredan gratis el saneado
+del HTML y **la fusión sin pérdidas**: si escribes en dos dispositivos, las notas se unen por
+identificador en lugar de perderse una versión.
+
 ## Flashcards
 
 Cada materia tiene su propia sección de repaso, a la que se entra con el botón **Flashcards** del
@@ -128,10 +169,12 @@ lugar de estar lista por la mañana, y cambiaría de comportamiento al viajar de
 Los apuntes se guardan en el repositorio privado **`12344-ux/cuadernos-data`**:
 
 ```
-indice.json            lista de materias, fechas y última materia abierta
-agenda.json            la agenda de tareas
-materias/<id>.json     el lienzo de cada materia
-mazos/<id>.json        las flashcards de cada materia
+indice.json               lista de materias, fechas y última materia abierta
+agenda.json               la agenda de tareas
+materias/<id>.json        el mapa conceptual de cada materia
+mazos/<id>.json           las flashcards de cada materia
+clases/<idMateria>.json   la lista de clases de Estudio Activo
+apuntes/<idClase>.json    el lienzo de apuntes de cada clase
 ```
 
 La agenda va en la raíz porque no pertenece a ninguna materia, y su fecha de modificación
@@ -293,8 +336,9 @@ La `base` de Vite es `'./'` (rutas relativas), así que el mismo build sirve tan
 ## Estado
 
 Fases 1, 3 y 4 completadas, más el formato de texto enriquecido, los post-its, las flashcards con
-SM-2 y la agenda de tareas. Pendiente: panel de notas rápidas (Fase 2), crear una flashcard
-directamente desde un cuadro del mapa, y el resto de mejoras de interfaz.
+SM-2, la agenda de tareas y Estudio Activo. Pendiente: panel de notas rápidas (Fase 2), y las
+integraciones entre partes (crear una flashcard desde un cuadro del mapa, o llevar contenido de los
+apuntes al mapa).
 
 ## Licencias
 

@@ -16,10 +16,17 @@ type Opciones = {
   alCambiarMazos?: (idCuaderno: string) => void
   /** Y para la agenda, que no pertenece a ninguna materia. */
   alCambiarAgenda?: () => void
+  /** La lista de clases de Estudio Activo, también en su propio archivo. */
+  alCambiarClases?: (idCuaderno: string) => void
 }
 
 /** Estado y operaciones sobre la lista de materias. */
-export function useCuadernos({ alCambiar, alCambiarMazos, alCambiarAgenda }: Opciones = {}) {
+export function useCuadernos({
+  alCambiar,
+  alCambiarMazos,
+  alCambiarAgenda,
+  alCambiarClases,
+}: Opciones = {}) {
   const [indice, setIndice] = useState<IndiceCuadernos>(() => leerIndice())
 
   /** Solo las que la interfaz debe mostrar: las lápidas quedan fuera. */
@@ -155,6 +162,25 @@ export function useCuadernos({ alCambiar, alCambiarMazos, alCambiarAgenda }: Opc
   )
 
   /**
+   * La llama Estudio Activo tras guardar la lista de clases.
+   *
+   * Como con los mazos, toca su propia fecha y no 'modificado': el mapa de la
+   * materia no ha cambiado porque se haya creado o renombrado una clase.
+   */
+  const marcarActividadClases = useCallback(
+    (id: string) => {
+      aplicar((previo) => ({
+        ...previo,
+        cuadernos: previo.cuadernos.map((c) =>
+          c.id === id ? { ...c, clasesModificado: Date.now() } : c,
+        ),
+      }))
+      alCambiarClases?.(id)
+    },
+    [aplicar, alCambiarClases],
+  )
+
+  /**
    * La llama la agenda tras guardar.
    *
    * La fecha va en la raíz del índice y no en una materia, porque la agenda no
@@ -188,6 +214,7 @@ export function useCuadernos({ alCambiar, alCambiarMazos, alCambiarAgenda }: Opc
     marcarActividad,
     marcarActividadMazos,
     marcarActividadAgenda,
+    marcarActividadClases,
     recordarUltimoCuaderno,
     recargar,
     sembrarSiVacio,
