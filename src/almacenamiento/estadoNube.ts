@@ -9,6 +9,12 @@
 
 const CLAVE_SHAS = 'cuadernos:shas'
 const CLAVE_PENDIENTES = 'cuadernos:pendientes'
+/**
+ * Los mazos llevan su propia lista de pendientes en lugar de compartir la de los
+ * mapas. Podrían haberse mezclado poniéndoles un prefijo, pero eso cambiaría el
+ * significado de lo que ya hay guardado en los dispositivos y habría que migrarlo.
+ */
+const CLAVE_PENDIENTES_MAZOS = 'cuadernos:pendientes-mazos'
 const CLAVE_ULTIMA_SYNC = 'cuadernos:ultima-sincronizacion'
 
 function leerJson<T>(clave: string, porDefecto: T): T {
@@ -62,8 +68,26 @@ export function limpiarPendiente(idCuaderno: string): void {
   )
 }
 
+/** Materias cuyos mazos tienen cambios que aún no están en la nube. */
+export function leerMazosPendientes(): string[] {
+  return leerJson<string[]>(CLAVE_PENDIENTES_MAZOS, [])
+}
+
+export function marcarMazosPendiente(idCuaderno: string): void {
+  const pendientes = new Set(leerMazosPendientes())
+  pendientes.add(idCuaderno)
+  escribirJson(CLAVE_PENDIENTES_MAZOS, [...pendientes])
+}
+
+export function limpiarMazosPendiente(idCuaderno: string): void {
+  escribirJson(
+    CLAVE_PENDIENTES_MAZOS,
+    leerMazosPendientes().filter((id) => id !== idCuaderno),
+  )
+}
+
 export function hayPendientes(): boolean {
-  return leerPendientes().length > 0
+  return leerPendientes().length > 0 || leerMazosPendientes().length > 0
 }
 
 export function leerUltimaSincronizacion(): number | null {
@@ -79,5 +103,6 @@ export function registrarSincronizacion(cuando: number = Date.now()): void {
 export function borrarEstadoNube(): void {
   localStorage.removeItem(CLAVE_SHAS)
   localStorage.removeItem(CLAVE_PENDIENTES)
+  localStorage.removeItem(CLAVE_PENDIENTES_MAZOS)
   localStorage.removeItem(CLAVE_ULTIMA_SYNC)
 }

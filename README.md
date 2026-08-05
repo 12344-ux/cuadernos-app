@@ -48,6 +48,50 @@ pero:
   para que siga diciendo cuántas ideas hay realmente en el mapa.
 - Se distingue de un vistazo por el giro, la sombra, la esquina doblada y el amarillo de partida.
 
+## Flashcards
+
+Cada materia tiene su propia sección de repaso, a la que se entra con el botón **Flashcards** del
+lienzo (`#/c/<id>/flashcards`). Dentro se crean mazos, y en cada mazo tarjetas con anverso y reverso,
+usando el mismo editor enriquecido que los cuadros del mapa: negrilla, cursiva, subrayado y marcador
+seleccionando el texto.
+
+La sección va en **modo oscuro** mientras el resto de la app sigue en claro. Es deliberado: es un
+modo de concentración. Entrar a estudiar apaga la interfaz del mapa y deja la tarjeta como único
+foco; al salir, todo vuelve a su aspecto habitual.
+
+En la sesión de repaso, `espacio` voltea la tarjeta y las teclas `1`-`4` responden.
+
+### El algoritmo
+
+Es **SM-2**, el de Anki, tomado del texto original de Piotr Woźniak (*Optimization of learning*,
+1990) y no de una reimplementación:
+
+```
+I(1) = 1
+I(2) = 6
+I(n) = I(n-1) * EF                                     redondeando hacia arriba
+EF'  = EF + (0.1 - (5-q) * (0.08 + (5-q) * 0.02))      con EF mínimo 1.3
+```
+
+Los cuatro botones son las calidades `q` de la escala 0-5: **Otra vez** `q=0`, **Difícil** `q=3`,
+**Bien** `q=4`, **Fácil** `q=5`. Con `q=4` el factor de facilidad no cambia, que es la comprobación
+que da el propio texto original. Pulsando siempre *Bien*, los intervalos van `1 → 6 → 15 → 38 → 95
+→ 238` días.
+
+**Al fallar, la facilidad también baja.** El texto original se contradice en este punto: la regla que
+actualiza el factor dice "tras cada repaso", pero la que trata los fallos dice que se reinicia "sin
+cambiar el E-Factor". Aquí se aplica siempre, como hace Anki, porque es lo útil: una tarjeta que se
+falla va espaciándose cada vez más despacio y aparece más a menudo que las fáciles. Se nota enseguida
+— sin fallos, el tercer acierto salta a 15 días; con un fallo previo, a 11.
+
+*Otra vez* devuelve la tarjeta al final de la cola de la sesión, así que vuelve a salir el mismo día.
+No hay límite diario de tarjetas nuevas: si un mazo trae doscientas, se ofrecen las doscientas.
+
+**Las fechas se guardan como día del calendario local** (`2026-08-06`) y no como marca de tiempo. Los
+intervalos de SM-2 son días enteros y "toca hoy" tiene que significar el día del usuario: con una
+marca de tiempo, una tarjeta repasada a las 23:50 volvería a vencer a las 23:50 del día siguiente en
+lugar de estar lista por la mañana, y cambiaría de comportamiento al viajar de zona horaria.
+
 ## Sincronización entre dispositivos
 
 Los apuntes se guardan en el repositorio privado **`12344-ux/cuadernos-data`**:
@@ -55,7 +99,12 @@ Los apuntes se guardan en el repositorio privado **`12344-ux/cuadernos-data`**:
 ```
 indice.json            lista de materias, fechas y última materia abierta
 materias/<id>.json     el lienzo de cada materia
+mazos/<id>.json        las flashcards de cada materia
 ```
+
+El mapa y las flashcards van en archivos separados a propósito, y cada uno lleva su propia fecha de
+modificación en el índice (`modificado` y `mazosModificado`). Si compartieran archivo, repasar una
+tarjeta reescribiría el mapa entero, lo marcaría como cambiado y generaría commits sobre él.
 
 ### Cómo crear el token
 
@@ -132,6 +181,11 @@ Como cuadros, flechas y notas tienen identificador propio, se pueden juntar de v
 es la unión de los tres conjuntos, y para los elementos que existen en las dos versiones manda el
 lado que se editó más tarde. Lo que se hizo en cada dispositivo sigue estando.
 
+Las flashcards se combinan igual, con una regla propia para las tarjetas que existen en los dos
+lados: **el texto lo aporta el lado que se editó más tarde y la programación el que la estudió más
+tarde**. Son cosas independientes, y así repasar en el móvil y luego retocar el mazo en el portátil
+no borra el progreso del repaso.
+
 Queda un caso que conviene conocer: si en un dispositivo se borró un cuadro y el otro estaba sin
 conexión, ese cuadro reaparece al combinar. Es un segundo volver a borrarlo, y es preferible a la
 alternativa anterior, que era perder todo lo escrito en uno de los dos lados. Y en cualquier caso
@@ -202,8 +256,9 @@ La `base` de Vite es `'./'` (rutas relativas), así que el mismo build sirve tan
 
 ## Estado
 
-Fases 1, 3 y 4 completadas, más el formato de texto enriquecido y los post-its. Pendiente: panel de
-notas rápidas (Fase 2) y el resto de mejoras de interfaz.
+Fases 1, 3 y 4 completadas, más el formato de texto enriquecido, los post-its y las flashcards con
+SM-2. Pendiente: panel de notas rápidas (Fase 2), crear una flashcard directamente desde un cuadro
+del mapa, y el resto de mejoras de interfaz.
 
 ## Licencias
 

@@ -22,6 +22,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { guardarDocumento } from '../almacenamiento/documentos'
 import { nuevoId } from '../almacenamiento/indice'
+import { irAlasFlashcards } from '../hooks/useRuta'
 import {
   PALETA,
   VERSION_DOCUMENTO,
@@ -402,6 +403,14 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
           </button>
           <button type="button" className="boton-secundario" onClick={() => void fitView({ padding: 0.25 })}>
             Ajustar vista
+          </button>
+          <button
+            type="button"
+            className="boton-flashcards"
+            title="Repasar esta materia con flashcards"
+            onClick={() => irAlasFlashcards(idCuaderno)}
+          >
+            Flashcards
           </button>
         </Panel>
 

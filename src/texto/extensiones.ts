@@ -37,34 +37,41 @@ const Marcador = Highlight.extend({
 })
 
 /**
- * Esquema deliberadamente mínimo: un cuadro de mapa conceptual es texto corto.
- * Se desactiva todo lo que no aporta (listas, citas, código, encabezados,
- * enlaces, líneas horizontales) para que el HTML guardado se mantenga pequeño y
- * predecible, y para que la lista blanca del saneador pueda ser igual de corta.
+ * Esquema deliberadamente mínimo: tanto un cuadro del mapa como la cara de una
+ * flashcard son textos cortos. Se desactiva todo lo que no aporta (listas,
+ * citas, código, encabezados, enlaces, líneas horizontales) para que el HTML
+ * guardado se mantenga pequeño y predecible, y para que la lista blanca del
+ * saneador pueda ser igual de corta.
  *
  * Queda activo: párrafos, texto, negrilla, cursiva, subrayado, salto de línea
  * manual y deshacer/rehacer.
+ *
+ * Es una función y no una constante porque el texto de ayuda cambia según dónde
+ * se use: "Escribe tu idea…" en el lienzo, "Pregunta" y "Respuesta" en una
+ * tarjeta.
  */
-export const EXTENSIONES_TEXTO: Extensions = [
-  StarterKit.configure({
-    blockquote: false,
-    bulletList: false,
-    code: false,
-    codeBlock: false,
-    // Sin bloques que arrastrar ni huecos entre bloques, estos dos cursores
-    // solo añaden plugins y estilos que no se llegan a ver.
-    dropcursor: false,
-    gapcursor: false,
-    heading: false,
-    horizontalRule: false,
-    link: false,
-    listItem: false,
-    listKeymap: false,
-    orderedList: false,
-    strike: false,
-    // Añadiría un párrafo vacío al final de cada cuadro.
-    trailingNode: false,
-  }),
-  Marcador.configure({ multicolor: true }),
-  Placeholder.configure({ placeholder: 'Escribe tu idea…' }),
-]
+export function extensionesDeTexto(placeholder = 'Escribe tu idea…'): Extensions {
+  return [
+    StarterKit.configure({
+      blockquote: false,
+      bulletList: false,
+      code: false,
+      codeBlock: false,
+      // Sin bloques que arrastrar ni huecos entre bloques, estos dos cursores
+      // solo añaden plugins y estilos que no se llegan a ver.
+      dropcursor: false,
+      gapcursor: false,
+      heading: false,
+      horizontalRule: false,
+      link: false,
+      listItem: false,
+      listKeymap: false,
+      orderedList: false,
+      strike: false,
+      // Añadiría un párrafo vacío al final de cada cuadro.
+      trailingNode: false,
+    }),
+    Marcador.configure({ multicolor: true }),
+    Placeholder.configure({ placeholder }),
+  ]
+}

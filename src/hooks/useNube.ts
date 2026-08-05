@@ -12,10 +12,7 @@ import {
   type DondeGuardar,
 } from '../nube/credenciales'
 import { ClienteGitHub, ErrorAutenticacion } from '../nube/github'
-import {
-  anotarCambioLocal,
-  sincronizar,
-} from '../nube/sincronizacion'
+import { anotarCambioLocal, anotarCambioMazos, sincronizar } from '../nube/sincronizacion'
 
 /**
  * No existe un modo "solo local" sin contraseña a propósito.
@@ -234,6 +231,16 @@ export function useNube({ alActualizarIndice }: Opciones) {
     [programarSubida],
   )
 
+  /** Lo mismo cuando lo que se ha guardado son los mazos de flashcards. */
+  const anotarCambioDeMazos = useCallback(
+    (idCuaderno: string) => {
+      anotarCambioMazos(idCuaderno)
+      setPendientes(true)
+      programarSubida()
+    },
+    [programarSubida],
+  )
+
   // Red de seguridad periódica, por si una subida falló y quedó algo pendiente.
   useEffect(() => {
     if (estadoSesion !== 'abierto') return
@@ -283,6 +290,7 @@ export function useNube({ alActualizarIndice }: Opciones) {
     olvidarCredencialGuardada,
     cerrarSesion,
     anotarCambio,
+    anotarCambioDeMazos,
     sincronizarAhora: ejecutarSincronizacion,
   }
 }

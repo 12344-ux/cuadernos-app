@@ -138,6 +138,16 @@ export type Cuaderno = {
   /** Cache para mostrar en la tarjeta sin abrir el documento. */
   numIdeas: number
   /**
+   * Fecha de modificación de los mazos de esta materia, aparte de la del mapa.
+   *
+   * Los mazos viven en su propio archivo, así que necesitan su propia recencia:
+   * con una sola fecha, estudiar flashcards haría parecer que el mapa cambió, y
+   * al sincronizar se bajaría o combinaría un mapa que nadie tocó.
+   */
+  mazosModificado?: number
+  /** Cache del número de tarjetas, para la tarjeta de la materia. */
+  numTarjetas?: number
+  /**
    * Lápida de borrado. Una materia eliminada no se quita del índice, se marca:
    * si se borrara sin más, al sincronizar volvería desde otro dispositivo que
    * todavía la tuviera. Se oculta de la interfaz y su archivo remoto se elimina.
