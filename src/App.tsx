@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { BarraNube } from './componentes/BarraNube'
+import { PanelAgenda } from './componentes/PanelAgenda'
+import { useAgenda } from './hooks/useAgenda'
 import { useCuadernos } from './hooks/useCuadernos'
 import { useNube } from './hooks/useNube'
 import { irAlCuaderno, irAlSelector, useRuta } from './hooks/useRuta'
 import { PantallaAcceso } from './pantallas/PantallaAcceso'
 import { PantallaFlashcards } from './pantallas/PantallaFlashcards'
+import { PantallaHistorial } from './pantallas/PantallaHistorial'
 import { SelectorCuadernos } from './pantallas/SelectorCuadernos'
 import { VistaCuaderno } from './pantallas/VistaCuaderno'
 
@@ -27,13 +30,22 @@ export default function App() {
     alternarArchivado,
     marcarActividad,
     marcarActividadMazos,
+    marcarActividadAgenda,
     recordarUltimoCuaderno,
     recargar,
     sembrarSiVacio,
   } = useCuadernos({
     alCambiar: nube.anotarCambio,
     alCambiarMazos: nube.anotarCambioDeMazos,
+    alCambiarAgenda: nube.anotarCambioDeAgenda,
   })
+
+  /*
+   * La agenda se sostiene aquí, y no dentro del selector, porque la comparten dos
+   * pantallas: el panel de inicio y el historial. Con una copia en cada una,
+   * marcar una tarea en un sitio dejaría la otra desactualizada.
+   */
+  const agenda = useAgenda({ onActividad: marcarActividadAgenda })
 
   useEffect(() => {
     recargarRef.current = recargar
@@ -115,6 +127,16 @@ export default function App() {
     />
   )
 
+  if (ruta.tipo === 'agenda') {
+    return (
+      <PantallaHistorial
+        tareas={agenda.tareas}
+        onAlternar={agenda.alternarCompletada}
+        onEliminar={agenda.eliminarTarea}
+      />
+    )
+  }
+
   if (ruta.tipo === 'cuaderno' || ruta.tipo === 'flashcards') {
     const cuaderno = cuadernos.find((c) => c.id === ruta.id)
 
@@ -141,6 +163,15 @@ export default function App() {
     <SelectorCuadernos
       cuadernos={cuadernos}
       barraNube={barra}
+      agenda={
+        <PanelAgenda
+          tareas={agenda.tareas}
+          onCrear={agenda.crearTarea}
+          onEditar={agenda.editarTarea}
+          onAlternar={agenda.alternarCompletada}
+          onEliminar={agenda.eliminarTarea}
+        />
+      }
       onAbrir={irAlCuaderno}
       onCrear={(nombre) => {
         const cuaderno = crear(nombre)

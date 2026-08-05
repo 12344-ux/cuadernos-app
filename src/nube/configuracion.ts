@@ -8,6 +8,12 @@ export const REPO_DATOS = {
 /** Rutas dentro del repositorio de datos. */
 export const RUTA_INDICE = 'indice.json'
 
+/**
+ * La agenda de tareas, en la raíz y no dentro de una materia: son tareas tuyas y
+ * no pertenecen a ninguna asignatura.
+ */
+export const RUTA_AGENDA = 'agenda.json'
+
 export function rutaMateria(idCuaderno: string): string {
   return `materias/${idCuaderno}.json`
 }

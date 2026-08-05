@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { enDias, intervaloLegible } from '../tarjetas/fechas'
+import { enDias, intervaloLegible } from '../fechas'
 import {
   ORDEN_RESPUESTAS,
   RESPUESTAS,

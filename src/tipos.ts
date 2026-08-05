@@ -164,6 +164,14 @@ export type IndiceCuadernos = {
   ultimoCuaderno?: string | null
   /** Marca de tiempo de la última escritura, para fusionar índices. */
   actualizado?: number
+  /**
+   * Fecha de modificación de la agenda de tareas.
+   *
+   * Va aquí arriba y no dentro de una materia porque la agenda no pertenece a
+   * ninguna. Tenerla aparte es lo que evita que editar una tarea haga parecer que
+   * cambió algún mapa.
+   */
+  agendaModificado?: number
 }
 
 /**
