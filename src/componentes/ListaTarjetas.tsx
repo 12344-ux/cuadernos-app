@@ -23,11 +23,11 @@ function Extracto({ html, vacio }: { html: string; vacio: string }) {
 
 function EstadoTarjeta({ tarjeta }: { tarjeta: Tarjeta }) {
   if (esNueva(tarjeta.programacion)) {
-    return <span className="pastilla-estudio es-nueva">Nueva</span>
+    return <span className="pastilla pastilla-nueva">Nueva</span>
   }
   const { proximoRepaso, facilidad } = tarjeta.programacion
   return (
-    <span className="pastilla-estudio" title={`Facilidad ${facilidad.toFixed(2)}`}>
+    <span className="pastilla" title={`Facilidad ${facilidad.toFixed(2)}`}>
       {proximoRepaso ? diaLegible(proximoRepaso) : '—'}
     </span>
   )
@@ -41,9 +41,9 @@ export function ListaTarjetas({ mazo, onAnadir, onEditar, onEliminar, onVolver }
   const tarjetaEditada = mazo.tarjetas.find((t) => t.id === editando)
 
   return (
-    <div className="panel-oscuro">
+    <div className="panel-estudio">
       <header className="cabecera-mazo">
-        <button type="button" className="boton-oscuro-suave" onClick={onVolver}>
+        <button type="button" className="boton-secundario" onClick={onVolver}>
           Mazos
         </button>
         <div>
@@ -57,7 +57,7 @@ export function ListaTarjetas({ mazo, onAnadir, onEditar, onEliminar, onVolver }
         {!anadiendo && !tarjetaEditada && (
           <button
             type="button"
-            className="boton-oscuro-principal"
+            className="boton-primario"
             onClick={() => setAnadiendo(true)}
           >
             + Nueva tarjeta
@@ -93,7 +93,7 @@ export function ListaTarjetas({ mazo, onAnadir, onEditar, onEliminar, onVolver }
       )}
 
       {mazo.tarjetas.length === 0 ? (
-        <p className="vacio-oscuro">
+        <p className="vacio">
           Este mazo está vacío. Añade la primera tarjeta con el botón de arriba.
         </p>
       ) : (
@@ -112,7 +112,7 @@ export function ListaTarjetas({ mazo, onAnadir, onEditar, onEliminar, onVolver }
               <div className="acciones-fila">
                 <button
                   type="button"
-                  className="boton-oscuro-suave pequeno"
+                  className="boton-discreto"
                   onClick={() => {
                     setAnadiendo(false)
                     setEditando(tarjeta.id)
@@ -122,7 +122,7 @@ export function ListaTarjetas({ mazo, onAnadir, onEditar, onEliminar, onVolver }
                 </button>
                 <button
                   type="button"
-                  className="boton-oscuro-peligro pequeno"
+                  className="boton-discreto peligro"
                   onClick={() => {
                     if (window.confirm('¿Eliminar esta tarjeta? No se puede deshacer.')) {
                       onEliminar(tarjeta.id)

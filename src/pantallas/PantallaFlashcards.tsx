@@ -34,7 +34,7 @@ function TarjetaMazo({
     <li className="tarjeta-mazo">
       {renombrando ? (
         <input
-          className="campo-oscuro"
+          className="entrada-nombre"
           value={nombre}
           autoFocus
           onChange={(evento) => setNombre(evento.target.value)}
@@ -67,28 +67,28 @@ function TarjetaMazo({
 
       <div className="mazo-hoy">
         {hayQueEstudiar ? (
-          <span className="pastilla-estudio es-pendiente">{recuento.total} para hoy</span>
+          <span className="pastilla pastilla-aviso">{recuento.total} para hoy</span>
         ) : (
-          <span className="pastilla-estudio es-aldia">Al día</span>
+          <span className="pastilla pastilla-ok">Al día</span>
         )}
       </div>
 
       <div className="acciones-mazo">
         <button
           type="button"
-          className="boton-oscuro-principal"
+          className="boton-primario"
           onClick={onEstudiar}
           disabled={!hayQueEstudiar}
           title={hayQueEstudiar ? undefined : 'No hay tarjetas pendientes hoy en este mazo'}
         >
           Estudiar
         </button>
-        <button type="button" className="boton-oscuro-suave" onClick={onAbrir}>
+        <button type="button" className="boton-secundario" onClick={onAbrir}>
           Tarjetas
         </button>
         <button
           type="button"
-          className="boton-oscuro-peligro"
+          className="boton-discreto peligro"
           onClick={() => {
             const aviso =
               mazo.tarjetas.length > 0
@@ -107,9 +107,10 @@ function TarjetaMazo({
 /**
  * Sección de flashcards de una materia.
  *
- * Va en modo oscuro a propósito, y no por capricho estético: es un modo de
- * concentración. Entrar a estudiar apaga la interfaz clara del mapa y deja la
- * tarjeta como único foco; al salir, la app vuelve a su aspecto habitual.
+ * Usa la misma paleta que el resto de la app: superficie blanca, acento índigo y
+ * las mismas clases de botón y pastilla que el selector de materias. Lo único
+ * propio de esta pantalla es la tarjeta que se voltea y los cuatro botones de
+ * respuesta, donde el color sí distingue la dificultad.
  */
 export function PantallaFlashcards({ cuaderno, onActividad }: Props) {
   const alGuardar = useCallback(
@@ -154,7 +155,7 @@ export function PantallaFlashcards({ cuaderno, onActividad }: Props) {
       <header className="barra-estudio">
         <button
           type="button"
-          className="boton-oscuro-suave"
+          className="boton-secundario"
           onClick={() => irAlCuaderno(cuaderno.id)}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -176,9 +177,9 @@ export function PantallaFlashcards({ cuaderno, onActividad }: Props) {
       </header>
 
       <main className="cuerpo-estudio">
-        {error && <p className="vacio-oscuro">{error}</p>}
+        {error && <p className="vacio">{error}</p>}
 
-        {!documento && !error && <p className="vacio-oscuro">Abriendo las flashcards…</p>}
+        {!documento && !error && <p className="vacio">Abriendo las flashcards…</p>}
 
         {documento && mazoEstudiando && (
           <SesionEstudio
@@ -201,7 +202,7 @@ export function PantallaFlashcards({ cuaderno, onActividad }: Props) {
         )}
 
         {documento && !mazoEstudiando && !mazoAbierto && (
-          <div className="panel-oscuro">
+          <div className="panel-estudio">
             <header className="cabecera-mazos">
               <div>
                 <h2>Mazos</h2>
@@ -213,7 +214,7 @@ export function PantallaFlashcards({ cuaderno, onActividad }: Props) {
               {!creando && (
                 <button
                   type="button"
-                  className="boton-oscuro-principal"
+                  className="boton-primario"
                   onClick={() => setCreando(true)}
                 >
                   + Nuevo mazo
@@ -224,7 +225,7 @@ export function PantallaFlashcards({ cuaderno, onActividad }: Props) {
             {creando && (
               <div className="crear-mazo">
                 <input
-                  className="campo-oscuro"
+                  className="entrada-nombre"
                   placeholder="Nombre del mazo, por ejemplo «Vocabulario»"
                   value={nombreNuevo}
                   autoFocus
@@ -239,7 +240,7 @@ export function PantallaFlashcards({ cuaderno, onActividad }: Props) {
                 />
                 <button
                   type="button"
-                  className="boton-oscuro-principal"
+                  className="boton-primario"
                   onClick={confirmarCreacion}
                 >
                   Crear
@@ -248,7 +249,7 @@ export function PantallaFlashcards({ cuaderno, onActividad }: Props) {
             )}
 
             {documento.mazos.length === 0 ? (
-              <p className="vacio-oscuro">
+              <p className="vacio">
                 Todavía no hay mazos en esta materia. Crea uno y empieza a añadir tarjetas.
               </p>
             ) : (

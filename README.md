@@ -55,9 +55,10 @@ lienzo (`#/c/<id>/flashcards`). Dentro se crean mazos, y en cada mazo tarjetas c
 usando el mismo editor enriquecido que los cuadros del mapa: negrilla, cursiva, subrayado y marcador
 seleccionando el texto.
 
-La sección va en **modo oscuro** mientras el resto de la app sigue en claro. Es deliberado: es un
-modo de concentración. Entrar a estudiar apaga la interfaz del mapa y deja la tarjeta como único
-foco; al salir, todo vuelve a su aspecto habitual.
+Usa la misma paleta que el resto de la app, con las mismas clases de botón y pastilla que el selector
+de materias. Lo único propio de esta pantalla es la tarjeta que se voltea y los cuatro botones de
+respuesta, donde el color sí distingue la dificultad (rojo, ámbar, verde y azul, tomados de los tonos
+que ya usaba la app).
 
 En la sesión de repaso, `espacio` voltea la tarjeta y las teclas `1`-`4` responden.
 
