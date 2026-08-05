@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { BarraNube } from './componentes/BarraNube'
-import { DialogoConflicto } from './componentes/DialogoConflicto'
 import { useCuadernos } from './hooks/useCuadernos'
 import { useNube } from './hooks/useNube'
 import { irAlCuaderno, irAlSelector, useRuta } from './hooks/useRuta'
@@ -109,13 +108,6 @@ export default function App() {
     />
   )
 
-  const modalConflictos = (
-    <DialogoConflicto
-      conflictos={nube.conflictos}
-      onResolver={(id, quedarseCon) => void nube.resolverConflicto(id, quedarseCon)}
-    />
-  )
-
   if (ruta.tipo === 'cuaderno') {
     const cuaderno = cuadernos.find((c) => c.id === ruta.id)
 
@@ -131,29 +123,21 @@ export default function App() {
       )
     }
 
-    return (
-      <>
-        <VistaCuaderno cuaderno={cuaderno} onActividad={marcarActividad} barraNube={barra} />
-        {modalConflictos}
-      </>
-    )
+    return <VistaCuaderno cuaderno={cuaderno} onActividad={marcarActividad} barraNube={barra} />
   }
 
   return (
-    <>
-      <SelectorCuadernos
-        cuadernos={cuadernos}
-        barraNube={barra}
-        onAbrir={irAlCuaderno}
-        onCrear={(nombre) => {
-          const cuaderno = crear(nombre)
-          irAlCuaderno(cuaderno.id)
-        }}
-        onRenombrar={renombrar}
-        onEliminar={(id) => void eliminar(id)}
-        onAlternarArchivado={alternarArchivado}
-      />
-      {modalConflictos}
-    </>
+    <SelectorCuadernos
+      cuadernos={cuadernos}
+      barraNube={barra}
+      onAbrir={irAlCuaderno}
+      onCrear={(nombre) => {
+        const cuaderno = crear(nombre)
+        irAlCuaderno(cuaderno.id)
+      }}
+      onRenombrar={renombrar}
+      onEliminar={(id) => void eliminar(id)}
+      onAlternarArchivado={alternarArchivado}
+    />
   )
 }

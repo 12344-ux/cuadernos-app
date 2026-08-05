@@ -51,6 +51,9 @@ const OPCIONES_ARISTA = {
 
 const RETARDO_AUTOGUARDADO = 700
 
+/** Más holgado que el del contenido: mover la vista no tiene ninguna urgencia. */
+const RETARDO_GUARDADO_VISTA = 1500
+
 type PropsLienzo = {
   idCuaderno: string
   documentoInicial: DocumentoCuaderno
@@ -74,6 +77,12 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(documentoInicial.edges)
   const [estado, setEstado] = useState<EstadoGuardado>('inactivo')
   const [version, setVersion] = useState(0)
+  /*
+   * Versión aparte para los cambios que solo afectan a cómo se está mirando el
+   * lienzo, no a su contenido: mover la vista y hacer zoom. Se guardan en este
+   * dispositivo, pero no cuentan como actividad de la materia.
+   */
+  const [versionVista, setVersionVista] = useState(0)
 
   const contenedorRef = useRef<HTMLDivElement | null>(null)
   const viewportRef = useRef<Viewport | null>(documentoInicial.viewport)
@@ -85,6 +94,8 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
   const nodesRef = useRef(nodes)
   const edgesRef = useRef(edges)
   const onGuardadoRef = useRef(onGuardado)
+  /** Hay contenido modificado que todavía no se ha anunciado a la nube. */
+  const contenidoSucioRef = useRef(false)
 
   useEffect(() => {
     nodesRef.current = nodes
@@ -94,7 +105,14 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
 
   const { screenToFlowPosition, fitView, getNode } = useReactFlow<NodoCuaderno>()
 
-  const marcarCambio = useCallback(() => setVersion((previa) => previa + 1), [])
+  /** Marca que ha cambiado el contenido: hay que guardar y avisar a la nube. */
+  const marcarCambio = useCallback(() => {
+    contenidoSucioRef.current = true
+    setVersion((previa) => previa + 1)
+  }, [])
+
+  /** Marca que solo ha cambiado la vista: se guarda aquí y no se anuncia. */
+  const marcarVista = useCallback(() => setVersionVista((previa) => previa + 1), [])
 
   const alCambiarNodos = useCallback(
     (cambios: NodeChange<NodoCuaderno>[]) => {
@@ -195,28 +213,54 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
     [crearNodo],
   )
 
+  const construirDocumento = useCallback(
+    (): DocumentoCuaderno => ({
+      version: VERSION_DOCUMENTO,
+      nodes: nodesRef.current,
+      edges: edgesRef.current,
+      viewport: viewportRef.current,
+      notas: notasRef.current,
+    }),
+    [],
+  )
+
   const guardar = useCallback(async () => {
     setEstado('guardando')
     try {
-      const nodosActuales = nodesRef.current
-      const documento: DocumentoCuaderno = {
-        version: VERSION_DOCUMENTO,
-        nodes: nodosActuales,
-        edges: edgesRef.current,
-        viewport: viewportRef.current,
-        notas: notasRef.current,
-      }
+      const documento = construirDocumento()
       await guardarDocumento(idCuaderno, documento)
+      contenidoSucioRef.current = false
       setEstado('guardado')
       // Los post-its no cuentan como ideas: son notas sueltas, no conceptos de
       // la estructura del mapa. Si contaran, el número de la tarjeta dejaría de
       // decir cuántas ideas hay realmente conectadas.
-      onGuardadoRef.current(nodosActuales.filter((nodo) => nodo.type === 'texto').length)
+      onGuardadoRef.current(documento.nodes.filter((nodo) => nodo.type === 'texto').length)
     } catch (error) {
       console.error('No se pudo guardar el cuaderno', error)
       setEstado('error')
     }
-  }, [idCuaderno])
+  }, [idCuaderno, construirDocumento])
+
+  /**
+   * Guarda el documento sin anunciar actividad.
+   *
+   * Se usa para la posición y el zoom del lienzo. Antes, mover la vista
+   * recorría toda la cadena de un cambio real: actualizaba la fecha de
+   * modificación de la materia, la marcaba pendiente de subida y acababa
+   * generando un commit en GitHub. Además fabricaba conflictos falsos, porque
+   * bastaba con mirar el mismo mapa en dos dispositivos para que los dos
+   * apareciesen "modificados" sin haber tocado nada.
+   *
+   * Ahora la vista se recuerda en este dispositivo y viaja a la nube de paso,
+   * cuando algo del contenido sí cambia.
+   */
+  const guardarVista = useCallback(async () => {
+    try {
+      await guardarDocumento(idCuaderno, construirDocumento())
+    } catch (error) {
+      console.error('No se pudo guardar la vista del cuaderno', error)
+    }
+  }, [idCuaderno, construirDocumento])
 
   /*
    * Autoguardado con retardo. Depende solo de 'version', que se incrementa
@@ -237,20 +281,43 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
     return () => window.clearTimeout(temporizador)
   }, [version, guardar])
 
+  /*
+   * Guardado de la vista, con más retardo que el del contenido: mover el lienzo
+   * produce muchos eventos seguidos y no hay ninguna prisa en anotar dónde
+   * quedó la vista.
+   */
+  useEffect(() => {
+    if (versionVista === 0) return
+
+    const temporizador = window.setTimeout(() => {
+      void guardarVista()
+    }, RETARDO_GUARDADO_VISTA)
+
+    return () => window.clearTimeout(temporizador)
+  }, [versionVista, guardarVista])
+
   // Si se abre un cuaderno es muy probable que se acabe escribiendo en él, así
   // que el editor se trae en segundo plano antes de que haga falta.
   useEffect(() => {
     precargarEditor()
   }, [])
 
-  // Guarda lo pendiente si se cierra la pestaña en medio del retardo.
+  /*
+   * Guarda lo pendiente si se cierra la pestaña en medio del retardo. Se
+   * distingue el caso para que cerrar la pestaña después de solo mover la vista
+   * no marque la materia como modificada.
+   */
   useEffect(() => {
     const alSalir = () => {
-      if (!primerRender.current) void guardar()
+      if (contenidoSucioRef.current) {
+        void guardar()
+      } else if (versionVista > 0) {
+        void guardarVista()
+      }
     }
     window.addEventListener('pagehide', alSalir)
     return () => window.removeEventListener('pagehide', alSalir)
-  }, [guardar])
+  }, [guardar, guardarVista, versionVista])
 
   const etiquetaEstado = useMemo(() => {
     switch (estado) {
@@ -289,9 +356,11 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
         defaultViewport={documentoInicial.viewport ?? undefined}
         fitView={!documentoInicial.viewport}
         fitViewOptions={{ padding: 0.3, maxZoom: 1 }}
+        // Mover o hacer zoom no es editar: se recuerda la vista, pero no cuenta
+        // como cambio de la materia (ver guardarVista).
         onMoveEnd={(_evento, viewport) => {
           viewportRef.current = viewport
-          marcarCambio()
+          marcarVista()
         }}
         minZoom={0.05}
         maxZoom={2.5}

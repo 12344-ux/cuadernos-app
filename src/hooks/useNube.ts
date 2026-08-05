@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { hayPendientes, leerUltimaSincronizacion } from '../almacenamiento/estadoNube'
 import { borrarTodoLoLocal } from '../almacenamiento/limpieza'
-import { INTERVALO_SUBIDA_MS } from '../nube/configuracion'
+import { INTERVALO_SUBIDA_MS, RETARDO_SUBIDA_MS } from '../nube/configuracion'
 import {
   cifrarToken,
   descifrarToken,
@@ -14,10 +14,7 @@ import {
 import { ClienteGitHub, ErrorAutenticacion } from '../nube/github'
 import {
   anotarCambioLocal,
-  resolverConLocal,
-  resolverConRemoto,
   sincronizar,
-  type Conflicto,
 } from '../nube/sincronizacion'
 
 /**
@@ -53,7 +50,6 @@ export function useNube({ alActualizarIndice }: Opciones) {
   const [estadoSesion, setEstadoSesion] = useState<EstadoSesion>('cargando')
   const [estadoNube, setEstadoNube] = useState<EstadoNube>('inactivo')
   const [mensaje, setMensaje] = useState<string | null>(null)
-  const [conflictos, setConflictos] = useState<Conflicto[]>([])
   const [pendientes, setPendientes] = useState(false)
   const [ultimaSync, setUltimaSync] = useState<number | null>(null)
   const [donde, setDonde] = useState<DondeGuardar>('solo-esta-sesion')
@@ -63,6 +59,8 @@ export function useNube({ alActualizarIndice }: Opciones) {
   const clienteRef = useRef<ClienteGitHub | null>(null)
   const sincronizandoRef = useRef(false)
   const alActualizarRef = useRef(alActualizarIndice)
+  /** Temporizador de la subida automática tras un cambio. */
+  const temporizadorSubidaRef = useRef<number | null>(null)
 
   useEffect(() => {
     alActualizarRef.current = alActualizarIndice
@@ -93,24 +91,18 @@ export function useNube({ alActualizarIndice }: Opciones) {
 
     try {
       const resultado = await sincronizar(cliente)
-      setConflictos(resultado.conflictos)
       alActualizarRef.current()
       refrescarPendientes()
       setUltimaSync(Date.now())
-
-      if (resultado.conflictos.length > 0) {
-        setEstadoNube('error')
-        setMensaje(
-          `${resultado.conflictos.length} materia(s) cambiaron aquí y en la nube. Elige cuál conservar.`,
-        )
-        return false
-      }
-
       setEstadoNube('sincronizado')
-      const partes: string[] = []
-      if (resultado.subidas.length) partes.push(`${resultado.subidas.length} subida(s)`)
-      if (resultado.bajadas.length) partes.push(`${resultado.bajadas.length} bajada(s)`)
-      setMensaje(partes.length ? partes.join(' · ') : null)
+
+      // Las fusiones sí se cuentan, porque conviene saber que llegó trabajo de
+      // otro dispositivo; pero no se pregunta nada ni se interrumpe.
+      setMensaje(
+        resultado.fusionadas.length
+          ? `Se combinaron los cambios de otro dispositivo en ${resultado.fusionadas.join(', ')}.`
+          : null,
+      )
       return true
     } catch (error) {
       console.error('Falló la sincronización', error)
@@ -200,52 +192,66 @@ export function useNube({ alActualizarIndice }: Opciones) {
     if (borrarDatos) {
       await borrarTodoLoLocal()
     }
-    setConflictos([])
     setEstadoNube('inactivo')
     setMensaje(null)
     setEstadoSesion('sin-configurar')
     alActualizarRef.current()
   }, [])
 
-  const resolverConflicto = useCallback(
-    async (idCuaderno: string, quedarseCon: 'local' | 'remoto'): Promise<void> => {
-      const cliente = clienteRef.current
-      if (!cliente) return
-      setEstadoNube('sincronizando')
-      try {
-        if (quedarseCon === 'local') {
-          await resolverConLocal(cliente, idCuaderno)
-        } else {
-          await resolverConRemoto(cliente, idCuaderno)
-        }
-        setConflictos((previos) => previos.filter((c) => c.idCuaderno !== idCuaderno))
-        alActualizarRef.current()
-        await ejecutarSincronizacion()
-      } catch (error) {
-        console.error('No se pudo resolver el conflicto', error)
-        setEstadoNube('error')
-        setMensaje(error instanceof Error ? error.message : 'Error al resolver el conflicto.')
+  /**
+   * Sube poco después del último cambio.
+   *
+   * Es lo que hace que no haya que acordarse de guardar nada: cada edición
+   * reprograma el temporizador, así que una ráfaga de cambios se agrupa en una
+   * sola subida y por tanto en un solo commit, pero nunca pasan más de unos
+   * segundos entre dejar de escribir y tenerlo en la nube.
+   */
+  const programarSubida = useCallback(() => {
+    if (temporizadorSubidaRef.current !== null) {
+      window.clearTimeout(temporizadorSubidaRef.current)
+    }
+    temporizadorSubidaRef.current = window.setTimeout(() => {
+      temporizadorSubidaRef.current = null
+      if (hayPendientes()) void ejecutarSincronizacion()
+    }, RETARDO_SUBIDA_MS)
+  }, [ejecutarSincronizacion])
+
+  useEffect(() => {
+    return () => {
+      if (temporizadorSubidaRef.current !== null) {
+        window.clearTimeout(temporizadorSubidaRef.current)
       }
-    },
-    [ejecutarSincronizacion],
-  )
+    }
+  }, [])
 
   /** La llama la app cuando el lienzo guarda en local. */
   const anotarCambio = useCallback(
     (idCuaderno: string) => {
       anotarCambioLocal(idCuaderno)
       setPendientes(true)
+      programarSubida()
     },
-    [],
+    [programarSubida],
   )
 
-  // Subida periódica: solo si la sesión está abierta y hay algo que subir.
+  // Red de seguridad periódica, por si una subida falló y quedó algo pendiente.
   useEffect(() => {
     if (estadoSesion !== 'abierto') return
     const temporizador = window.setInterval(() => {
       if (hayPendientes()) void ejecutarSincronizacion()
     }, INTERVALO_SUBIDA_MS)
     return () => window.clearInterval(temporizador)
+  }, [estadoSesion, ejecutarSincronizacion])
+
+  // Al recuperar la conexión se reintenta enseguida: si se estuvo trabajando sin
+  // red, lo pendiente se queda esperando al intervalo sin este aviso.
+  useEffect(() => {
+    if (estadoSesion !== 'abierto') return
+    const alVolverLaRed = () => {
+      if (hayPendientes()) void ejecutarSincronizacion()
+    }
+    window.addEventListener('online', alVolverLaRed)
+    return () => window.removeEventListener('online', alVolverLaRed)
   }, [estadoSesion, ejecutarSincronizacion])
 
   // Al ocultar la pestaña se intenta subir lo pendiente. 'visibilitychange' es
@@ -269,7 +275,6 @@ export function useNube({ alActualizarIndice }: Opciones) {
     estadoSesion,
     estadoNube,
     mensaje,
-    conflictos,
     pendientes,
     ultimaSync,
     donde,
@@ -277,7 +282,6 @@ export function useNube({ alActualizarIndice }: Opciones) {
     desbloquear,
     olvidarCredencialGuardada,
     cerrarSesion,
-    resolverConflicto,
     anotarCambio,
     sincronizarAhora: ejecutarSincronizacion,
   }

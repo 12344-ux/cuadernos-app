@@ -105,14 +105,41 @@ se ofrece **Usar otro token**.
 
 ### Cuándo se sube
 
-Cada 2 minutos si hay cambios, al ocultar la pestaña, y con el botón **Guardar en la nube**. No
-se sube en cada pulsación como el guardado local, porque cada escritura es un commit.
+**No hay que acordarse de guardar nada.** Cuatro segundos después de dejar de escribir, lo que
+cambió está en la nube. El retardo existe porque cada escritura es un commit: agrupar una ráfaga de
+ediciones en una sola subida evita llenar el historial de commits de una letra cada uno.
 
-### Conflictos y borrados
+Además se sube al ocultar la pestaña, al recuperar la conexión, y cada 2 minutos como red de
+seguridad por si alguna subida falló. El botón **Comprobar ahora** no hace falta para guardar; sirve
+para traer los cambios de otro dispositivo en ese instante.
 
-Si una materia cambió aquí y en la nube desde la última sincronización, la app **pregunta** cuál
-conservar en lugar de decidir sola. La detección se apoya en el `sha` que devuelve GitHub: una
-escritura con un `sha` desactualizado se rechaza en lugar de pisar el trabajo ajeno.
+### Mover la vista no es editar
+
+Desplazar el lienzo o hacer zoom se recuerda en el dispositivo, pero **no cuenta como cambio de la
+materia**: no toca su fecha de modificación, no la marca pendiente y no genera ningún commit.
+
+Antes sí lo hacía, y tenía dos consecuencias molestas: el historial se llenaba de commits por
+haber mirado un mapa, y bastaba con abrir la misma materia en dos dispositivos para que los dos
+apareciesen "modificados" y saltara un aviso de conflicto sin haber tocado nada.
+
+### Conflictos: se combinan solos
+
+Si una materia cambió aquí y en la nube, **la app las combina sin preguntar**. Antes salía un
+diálogo pidiendo elegir cuál conservar, y la otra se descartaba: confundía y podía costar una tarde
+de trabajo.
+
+Como cuadros, flechas y notas tienen identificador propio, se pueden juntar de verdad: el resultado
+es la unión de los tres conjuntos, y para los elementos que existen en las dos versiones manda el
+lado que se editó más tarde. Lo que se hizo en cada dispositivo sigue estando.
+
+Queda un caso que conviene conocer: si en un dispositivo se borró un cuadro y el otro estaba sin
+conexión, ese cuadro reaparece al combinar. Es un segundo volver a borrarlo, y es preferible a la
+alternativa anterior, que era perder todo lo escrito en uno de los dos lados. Y en cualquier caso
+nada se pierde de forma irreversible: cada sincronización es un commit, así que toda versión
+anterior sigue en el historial del repositorio.
+
+La detección se apoya en el `sha` que devuelve GitHub: una escritura con un `sha` desactualizado se
+rechaza, y eso es lo que permite darse cuenta de que hay que combinar en lugar de pisar.
 
 Al eliminar una materia se deja una *lápida* en el índice en vez de quitar la entrada. Sin eso,
 la próxima sincronización con un dispositivo que todavía la tuviera la resucitaría.

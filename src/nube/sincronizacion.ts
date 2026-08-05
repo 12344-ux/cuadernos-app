@@ -13,23 +13,89 @@ import {
   registrarSincronizacion,
 } from '../almacenamiento/estadoNube'
 import { escribirIndice, leerIndice, normalizarIndice } from '../almacenamiento/indice'
-import { VERSION_INDICE, type Cuaderno, type IndiceCuadernos } from '../tipos'
+import {
+  VERSION_DOCUMENTO,
+  VERSION_INDICE,
+  type Cuaderno,
+  type DocumentoCuaderno,
+  type IndiceCuadernos,
+} from '../tipos'
 import { RUTA_INDICE, rutaMateria } from './configuracion'
 import { ClienteGitHub, ErrorConflicto } from './github'
-
-/** Una materia que cambió aquí y en la nube desde la última sincronización. */
-export type Conflicto = {
-  idCuaderno: string
-  nombre: string
-  modificadoLocal: number
-  modificadoRemoto: number
-}
 
 export type ResultadoSincronizacion = {
   indice: IndiceCuadernos
   bajadas: string[]
   subidas: string[]
-  conflictos: Conflicto[]
+  /** Materias que cambiaron aquí y en la nube y se combinaron solas. */
+  fusionadas: string[]
+}
+
+/**
+ * Interpreta un archivo remoto sin dejar que un JSON roto tumbe la
+ * sincronización entera. Si no se puede leer se devuelve null y el resto del
+ * proceso lo trata como si el archivo no existiera, de modo que la versión de
+ * este dispositivo lo reemplace en la siguiente subida.
+ */
+function interpretarDocumento(contenido: string): DocumentoCuaderno | null {
+  try {
+    return JSON.parse(contenido) as DocumentoCuaderno
+  } catch (error) {
+    console.error('El documento remoto no se pudo interpretar', error)
+    return null
+  }
+}
+
+function interpretarIndice(contenido: string): IndiceCuadernos | null {
+  try {
+    return normalizarIndice(JSON.parse(contenido))
+  } catch (error) {
+    console.error('El índice remoto no se pudo interpretar', error)
+    return null
+  }
+}
+
+function unirPorId<T extends { id: string }>(preferidos: T[], otros: T[]): T[] {
+  const porId = new Map<string, T>()
+  // Primero los del lado que pierde, para que el preferido los sustituya.
+  for (const elemento of otros) porId.set(elemento.id, elemento)
+  for (const elemento of preferidos) porId.set(elemento.id, elemento)
+  return [...porId.values()]
+}
+
+/**
+ * Combina dos versiones del mismo cuaderno en lugar de descartar una.
+ *
+ * Antes, cuando una materia cambiaba en dos sitios, la app preguntaba cuál
+ * conservar y tiraba la otra. Preguntar confunde, y elegir por el usuario
+ * significaría perder una tarde de trabajo sin avisar.
+ *
+ * Como cuadros, flechas y notas tienen identificador propio, se pueden juntar:
+ * se queda la unión de los tres conjuntos, y para los elementos que existen en
+ * las dos versiones manda el lado que se editó más tarde. Así lo que se hizo en
+ * cada dispositivo sigue estando.
+ *
+ * Queda un caso sin resolver, y conviene saberlo: si en un dispositivo se borró
+ * un cuadro y el otro estaba sin conexión, el cuadro reaparece. Es reversible
+ * en un segundo (se vuelve a borrar) y preferible a la alternativa, que era
+ * perder todo lo escrito en uno de los dos lados.
+ */
+export function fusionarDocumentos(
+  local: DocumentoCuaderno,
+  remoto: DocumentoCuaderno,
+  ganaLocal: boolean,
+): DocumentoCuaderno {
+  const preferido = ganaLocal ? local : remoto
+  const otro = ganaLocal ? remoto : local
+
+  return {
+    version: VERSION_DOCUMENTO,
+    nodes: unirPorId(preferido.nodes ?? [], otro.nodes ?? []),
+    edges: unirPorId(preferido.edges ?? [], otro.edges ?? []),
+    // La vista es de quien la miró más tarde; no tiene sentido combinarla.
+    viewport: preferido.viewport ?? otro.viewport,
+    notas: unirPorId(preferido.notas ?? [], otro.notas ?? []),
+  }
 }
 
 /**
@@ -89,13 +155,19 @@ export async function sincronizar(cliente: ClienteGitHub): Promise<ResultadoSinc
 
   const bajadas: string[] = []
   const subidas: string[] = []
-  const conflictos: Conflicto[] = []
+  const fusionadas: string[] = []
 
   // ---- 1. Índice remoto ----
+  const indiceVacio: IndiceCuadernos = {
+    version: VERSION_INDICE,
+    cuadernos: [],
+    ultimoCuaderno: null,
+    actualizado: 0,
+  }
+
   const archivoIndice = await cliente.leerArchivo(RUTA_INDICE)
-  const remoto: IndiceCuadernos = archivoIndice
-    ? normalizarIndice(JSON.parse(archivoIndice.contenido))
-    : { version: VERSION_INDICE, cuadernos: [], ultimoCuaderno: null, actualizado: 0 }
+  const remoto: IndiceCuadernos =
+    (archivoIndice ? interpretarIndice(archivoIndice.contenido) : null) ?? indiceVacio
 
   if (archivoIndice) recordarSha(RUTA_INDICE, archivoIndice.sha)
 
@@ -126,25 +198,27 @@ export async function sincronizar(cliente: ClienteGitHub): Promise<ResultadoSinc
     const tieneCambiosLocales = pendientes.has(cuaderno.id)
     const remotoEsMasNuevo =
       entradaRemota && (!entradaLocal || entradaRemota.modificado > entradaLocal.modificado)
+    const ganaLocal = (entradaLocal?.modificado ?? 0) >= (entradaRemota?.modificado ?? 0)
 
-    // Conflicto real: cambió aquí y allí desde la última vez que lo vimos.
+    // Cambió aquí y allí desde la última vez que lo vimos: se combinan las dos
+    // versiones en lugar de preguntar cuál sacrificar.
     if (tieneCambiosLocales && remotoEsMasNuevo) {
       const actual = await cliente.leerArchivo(ruta)
       if (actual && shas[ruta] && actual.sha !== shas[ruta]) {
-        conflictos.push({
-          idCuaderno: cuaderno.id,
-          nombre: cuaderno.nombre,
-          modificadoLocal: entradaLocal?.modificado ?? 0,
-          modificadoRemoto: entradaRemota.modificado,
-        })
+        if (await combinarYSubir(cliente, cuaderno, actual, ganaLocal)) {
+          fusionadas.push(cuaderno.nombre)
+        } else {
+          subidas.push(cuaderno.nombre)
+        }
         continue
       }
     }
 
     if (remotoEsMasNuevo && !tieneCambiosLocales) {
       const archivo = await cliente.leerArchivo(ruta)
-      if (archivo) {
-        await guardarDocumento(cuaderno.id, JSON.parse(archivo.contenido))
+      const remotoDoc = archivo ? interpretarDocumento(archivo.contenido) : null
+      if (archivo && remotoDoc) {
+        await guardarDocumento(cuaderno.id, remotoDoc)
         recordarSha(ruta, archivo.sha)
         bajadas.push(cuaderno.nombre)
       }
@@ -164,67 +238,103 @@ export async function sincronizar(cliente: ClienteGitHub): Promise<ResultadoSinc
         limpiarPendiente(cuaderno.id)
         subidas.push(cuaderno.nombre)
       } catch (error) {
-        if (error instanceof ErrorConflicto) {
-          conflictos.push({
-            idCuaderno: cuaderno.id,
-            nombre: cuaderno.nombre,
-            modificadoLocal: entradaLocal?.modificado ?? 0,
-            modificadoRemoto: entradaRemota?.modificado ?? 0,
-          })
+        if (!(error instanceof ErrorConflicto)) throw error
+        /*
+         * Otro dispositivo escribió entre nuestra lectura y nuestra escritura.
+         * Se relee, se combina y se vuelve a subir: la materia no se queda
+         * pendiente para siempre chocando en cada intento, que es lo que
+         * ocurría antes de que la resolución fuese automática.
+         */
+        const actual = await cliente.leerArchivo(ruta)
+        if (await combinarYSubir(cliente, cuaderno, actual, ganaLocal)) {
+          fusionadas.push(cuaderno.nombre)
         } else {
-          throw error
+          subidas.push(cuaderno.nombre)
         }
       }
     }
   }
 
   // ---- 3. Índice al final ----
-  const indiceFinal: IndiceCuadernos = { ...fusionado, actualizado: Date.now() }
-  const shaIndice = leerShas()[RUTA_INDICE]
-  const nuevoShaIndice = await cliente.escribirArchivo(
-    RUTA_INDICE,
-    JSON.stringify(indiceFinal, null, 2),
-    shaIndice,
-    'Actualizar índice de materias',
-  )
-  recordarSha(RUTA_INDICE, nuevoShaIndice)
+  const indiceFinal = await subirIndice(cliente, fusionado)
 
   escribirIndice(indiceFinal)
   registrarSincronizacion()
 
-  return { indice: indiceFinal, bajadas, subidas, conflictos }
+  return { indice: indiceFinal, bajadas, subidas, fusionadas }
 }
 
-/** Resuelve un conflicto conservando la versión de este dispositivo. */
-export async function resolverConLocal(
+/**
+ * Combina la versión local con la remota y sube el resultado.
+ *
+ * Devuelve true si hubo algo que combinar de verdad, y false si el archivo
+ * remoto no existía o no se pudo leer, en cuyo caso simplemente se ha subido lo
+ * de aquí.
+ */
+async function combinarYSubir(
   cliente: ClienteGitHub,
-  idCuaderno: string,
-): Promise<void> {
-  const ruta = rutaMateria(idCuaderno)
-  const documento = await cargarDocumento(idCuaderno)
-  // Se relee el sha actual para que la escritura sea aceptada.
-  const actual = await cliente.leerArchivo(ruta)
+  cuaderno: Cuaderno,
+  actual: { contenido: string; sha: string } | null,
+  ganaLocal: boolean,
+): Promise<boolean> {
+  const ruta = rutaMateria(cuaderno.id)
+  const local = await cargarDocumento(cuaderno.id)
+  const remoto = actual ? interpretarDocumento(actual.contenido) : null
+  const combinado = remoto ? fusionarDocumentos(local, remoto, ganaLocal) : local
+
+  // Se guarda también aquí para que el dispositivo quede con lo mismo que la nube.
+  await guardarDocumento(cuaderno.id, combinado)
+
   const nuevoSha = await cliente.escribirArchivo(
     ruta,
-    JSON.stringify(documento, null, 2),
+    JSON.stringify(combinado, null, 2),
     actual?.sha,
-    `Conservar la versión local de ${idCuaderno}`,
+    remoto ? `Combinar cambios de ${cuaderno.nombre}` : `Actualizar ${cuaderno.nombre}`,
   )
   recordarSha(ruta, nuevoSha)
-  limpiarPendiente(idCuaderno)
+  limpiarPendiente(cuaderno.id)
+  return remoto !== null
 }
 
-/** Resuelve un conflicto trayendo la versión de la nube y descartando la local. */
-export async function resolverConRemoto(
+/**
+ * Sube el índice, reintentando una vez si otro dispositivo lo escribió mientras
+ * trabajábamos. Antes, ese choque lanzaba la excepción fuera de sincronizar() y
+ * abortaba todo el proceso con un mensaje genérico.
+ */
+async function subirIndice(
   cliente: ClienteGitHub,
-  idCuaderno: string,
-): Promise<void> {
-  const ruta = rutaMateria(idCuaderno)
-  const archivo = await cliente.leerArchivo(ruta)
-  if (!archivo) return
-  await guardarDocumento(idCuaderno, JSON.parse(archivo.contenido))
-  recordarSha(ruta, archivo.sha)
-  limpiarPendiente(idCuaderno)
+  fusionado: IndiceCuadernos,
+): Promise<IndiceCuadernos> {
+  const indiceFinal: IndiceCuadernos = { ...fusionado, actualizado: Date.now() }
+
+  try {
+    const nuevoSha = await cliente.escribirArchivo(
+      RUTA_INDICE,
+      JSON.stringify(indiceFinal, null, 2),
+      leerShas()[RUTA_INDICE],
+      'Actualizar índice de materias',
+    )
+    recordarSha(RUTA_INDICE, nuevoSha)
+    return indiceFinal
+  } catch (error) {
+    if (!(error instanceof ErrorConflicto)) throw error
+
+    const archivo = await cliente.leerArchivo(RUTA_INDICE)
+    const remoto = archivo ? interpretarIndice(archivo.contenido) : null
+    const reintento: IndiceCuadernos = {
+      ...(remoto ? fusionarIndices(indiceFinal, remoto) : indiceFinal),
+      actualizado: Date.now(),
+    }
+
+    const nuevoSha = await cliente.escribirArchivo(
+      RUTA_INDICE,
+      JSON.stringify(reintento, null, 2),
+      archivo?.sha,
+      'Actualizar índice de materias',
+    )
+    recordarSha(RUTA_INDICE, nuevoSha)
+    return reintento
+  }
 }
 
 /** La llama el lienzo cuando guarda en local, para que la nube sepa qué falta. */

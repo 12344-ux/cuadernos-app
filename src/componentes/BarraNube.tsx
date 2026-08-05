@@ -34,11 +34,17 @@ export function BarraNube({
 
   if (estadoSesion !== 'abierto') return null
 
+  /*
+   * Los textos evitan a propósito dar la sensación de que hay algo que el
+   * usuario deba hacer. Todo se sube solo unos segundos después de dejar de
+   * escribir, así que "cambios sin subir" solo generaba intranquilidad: mientras
+   * hay algo pendiente lo correcto es decir que se está guardando.
+   */
   const etiqueta = (() => {
-    if (estadoNube === 'sincronizando') return 'Sincronizando…'
+    if (estadoNube === 'sincronizando') return 'Guardando en la nube…'
     if (estadoNube === 'error') return mensaje ?? 'Error de sincronización'
-    if (pendientes) return 'Cambios sin subir'
-    if (ultimaSync) return `Al día · ${formateadorHora.format(ultimaSync)}`
+    if (pendientes) return 'Guardando…'
+    if (ultimaSync) return `Todo guardado · ${formateadorHora.format(ultimaSync)}`
     return 'Conectado'
   })()
 
@@ -57,13 +63,16 @@ export function BarraNube({
         {etiqueta}
       </span>
 
+      {/* Ya no hace falta pulsarlo para guardar; queda para forzar una
+          comprobación cuando se quiere traer lo de otro dispositivo ya mismo. */}
       <button
         type="button"
         className="boton-secundario pequeno"
         onClick={onSincronizar}
         disabled={estadoNube === 'sincronizando'}
+        title="Todo se guarda solo. Esto únicamente comprueba la nube ahora mismo."
       >
-        Guardar en la nube
+        Comprobar ahora
       </button>
 
       {/* Salida cuando el token caduca o se revoca, sin perder los apuntes locales. */}
@@ -77,7 +86,7 @@ export function BarraNube({
         <div className="confirmar-salida">
           <p>
             {pendientes
-              ? 'Tienes cambios sin subir. Si borras los datos ahora se perderán.'
+              ? 'Queda algo por subir. Espera unos segundos antes de borrar los datos, o pulsa "Comprobar ahora".'
               : 'Todo está guardado en la nube.'}
           </p>
           <label className="casilla compacta">
