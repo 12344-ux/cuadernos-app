@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { enDias, intervaloLegible } from '../tarjetas/fechas'
+import { enDias, intervaloLegible } from '../fechas'
 import {
   ORDEN_RESPUESTAS,
   RESPUESTAS,
@@ -97,7 +97,7 @@ export function SesionEstudio({ mazo, onResponder, onSalir }: Props) {
             ? `Mañana te tocan ${paraManana} ${paraManana === 1 ? 'tarjeta' : 'tarjetas'}.`
             : 'Mañana no te toca ninguna de este mazo.'}
         </p>
-        <button type="button" className="boton-estudio-principal" onClick={onSalir}>
+        <button type="button" className="boton-ver-respuesta" onClick={onSalir}>
           Volver a los mazos
         </button>
       </div>
@@ -111,7 +111,7 @@ export function SesionEstudio({ mazo, onResponder, onSalir }: Props) {
         <h2>Esa tarjeta ya no existe</h2>
         <button
           type="button"
-          className="boton-estudio-principal"
+          className="boton-ver-respuesta"
           onClick={() => setPosicion((p) => p + 1)}
         >
           Continuar
@@ -167,7 +167,7 @@ export function SesionEstudio({ mazo, onResponder, onSalir }: Props) {
       ) : (
         <button
           type="button"
-          className="boton-estudio-principal"
+          className="boton-ver-respuesta"
           onClick={() => setVolteada(true)}
         >
           Ver respuesta

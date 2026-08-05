@@ -906,6 +906,37 @@ button[disabled] {
   padding: 0.3rem 0.6rem;
 }
 
+.boton-primario:disabled {
+  background: var(--linea);
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/*
+ * Acción terciaria: la misma que usan las tarjetas de materia para eliminar.
+ * Un botón rojo macizo junto a "Estudiar" invertiría la jerarquía y haría que lo
+ * primero que salta a la vista en la lista fuese cómo borrar.
+ */
+.boton-discreto {
+  background: none;
+  border: none;
+  color: var(--tinta-suave);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.55rem;
+  border-radius: 6px;
+}
+
+.boton-discreto:hover {
+  background: #f1f5f9;
+  color: var(--tinta);
+}
+
+.boton-discreto.peligro:hover {
+  background: #fef2f2;
+  color: var(--peligro);
+}
+
 .boton-peligro {
   background: var(--peligro);
   color: #fff;
@@ -953,34 +984,19 @@ button[disabled] {
 
 
 /* =========================================================================
-   Flashcards: modo estudio
+   Flashcards
    =========================================================================
-   La sección va en oscuro mientras el resto de la app sigue en claro, y es
-   deliberado: es un modo de concentración. Entrar a estudiar apaga la interfaz
-   del mapa y deja la tarjeta como único foco.
-
-   Los colores se declaran como propiedades del propio contenedor para que no se
-   escapen al resto de la aplicación.
+   Misma paleta que el resto de la app. Los botones, las pastillas y los campos
+   son las clases que ya usa el selector de materias; lo único propio de aquí es
+   la tarjeta que se voltea y los cuatro botones de respuesta.
    ========================================================================= */
 
 .seccion-estudio {
-  --fondo-oscuro: #0d1520;
-  --superficie-oscura: #16202e;
-  --superficie-alta: #1e2a3a;
-  --linea-oscura: #2b3849;
-  --tinta-clara: #e9eff6;
-  --tinta-clara-suave: #93a3b5;
-  --teal: #2dd4bf;
-  --teal-hundido: #0f766e;
-  --ambar: #fbbf24;
-  --rojo-suave: #f87171;
-
   position: fixed;
   inset: 0;
   display: flex;
   flex-direction: column;
-  background: var(--fondo-oscuro);
-  color: var(--tinta-clara);
+  background: var(--fondo);
   overflow: auto;
 }
 
@@ -989,8 +1005,8 @@ button[disabled] {
   align-items: center;
   gap: 1rem;
   padding: 0.9rem 1.2rem;
-  border-bottom: 1px solid var(--linea-oscura);
-  background: rgba(13, 21, 32, 0.9);
+  border-bottom: 1px solid var(--linea);
+  background: var(--superficie);
   position: sticky;
   top: 0;
   z-index: 5;
@@ -1008,7 +1024,7 @@ button[disabled] {
   font-weight: 700;
   letter-spacing: 0.11em;
   text-transform: uppercase;
-  color: var(--teal);
+  color: var(--acento);
 }
 
 .cuerpo-estudio {
@@ -1019,104 +1035,28 @@ button[disabled] {
   padding: 1.6rem 1.2rem 3rem;
 }
 
-/* ---------- Botones del modo oscuro ---------- */
-
-.boton-oscuro-principal,
-.boton-oscuro-suave,
-.boton-oscuro-peligro {
-  border-radius: var(--radio);
-  border: 1px solid transparent;
-  padding: 0.5rem 0.85rem;
-  font-weight: 600;
-  font-size: 0.85rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
-}
-
-.boton-oscuro-principal.pequeno,
-.boton-oscuro-suave.pequeno,
-.boton-oscuro-peligro.pequeno {
-  padding: 0.32rem 0.6rem;
-  font-size: 0.78rem;
-}
-
-.boton-oscuro-principal {
-  background: var(--teal);
-  color: #04201c;
-}
-
-.boton-oscuro-principal:hover:not(:disabled) {
-  background: #5eead4;
-}
-
-.boton-oscuro-principal:disabled {
-  background: var(--superficie-alta);
-  color: var(--tinta-clara-suave);
-  cursor: not-allowed;
-}
-
-.boton-oscuro-suave {
-  background: var(--superficie-alta);
-  border-color: var(--linea-oscura);
-  color: var(--tinta-clara);
-}
-
-.boton-oscuro-suave:hover {
-  border-color: #3d4d63;
-  background: #26344a;
-}
-
-.boton-oscuro-peligro {
-  background: transparent;
-  border-color: transparent;
-  color: var(--tinta-clara-suave);
-}
-
-.boton-oscuro-peligro:hover {
-  color: var(--rojo-suave);
-  background: rgba(248, 113, 113, 0.1);
-}
-
-.campo-oscuro {
-  flex: 1 1 auto;
-  background: var(--fondo-oscuro);
-  border: 1px solid var(--linea-oscura);
-  border-radius: var(--radio);
-  padding: 0.5rem 0.7rem;
-  font: inherit;
-  font-size: 0.9rem;
-  color: var(--tinta-clara);
-}
-
-.campo-oscuro:focus {
-  outline: none;
-  border-color: var(--teal);
-}
-
-/* El botón que lleva a las flashcards desde el lienzo, en la app clara. */
+/* El botón que lleva a las flashcards desde el lienzo. */
 .boton-flashcards {
   border-radius: var(--radio);
-  border: 1px solid #99f6e4;
+  border: 1px solid var(--linea);
   padding: 0.5rem 0.9rem;
   font-weight: 600;
   font-size: 0.875rem;
-  background: #f0fdfa;
-  color: #0f766e;
+  background: var(--acento-suave);
+  color: var(--acento);
   transition: background 0.15s, border-color 0.15s;
 }
 
 .boton-flashcards:hover {
-  background: #ccfbf1;
-  border-color: #5eead4;
+  background: #e0e7ff;
+  border-color: #c7d2fe;
 }
 
 /* ---------- Paneles, mazos y tarjetas ---------- */
 
-.panel-oscuro {
-  background: var(--superficie-oscura);
-  border: 1px solid var(--linea-oscura);
+.panel-estudio {
+  background: var(--superficie);
+  border: 1px solid var(--linea);
   border-radius: 14px;
   padding: 1.2rem;
 }
@@ -1139,15 +1079,7 @@ button[disabled] {
 .cabecera-mazo-detalle {
   margin: 0.15rem 0 0;
   font-size: 0.8rem;
-  color: var(--tinta-clara-suave);
-}
-
-.vacio-oscuro {
-  color: var(--tinta-clara-suave);
-  font-size: 0.9rem;
-  text-align: center;
-  padding: 2rem 1rem;
-  margin: 0;
+  color: var(--tinta-suave);
 }
 
 .crear-mazo {
@@ -1171,10 +1103,14 @@ button[disabled] {
   grid-template-columns: 1fr auto;
   gap: 0.3rem 1rem;
   align-items: center;
-  background: var(--superficie-alta);
-  border: 1px solid var(--linea-oscura);
+  border: 1px solid var(--linea);
   border-radius: var(--radio);
   padding: 0.85rem 1rem;
+  transition: border-color 0.15s;
+}
+
+.tarjeta-mazo:hover {
+  border-color: #cbd5e1;
 }
 
 .nombre-mazo {
@@ -1184,19 +1120,19 @@ button[disabled] {
   font: inherit;
   font-size: 1rem;
   font-weight: 650;
-  color: var(--tinta-clara);
+  color: var(--tinta);
   text-align: left;
 }
 
 .nombre-mazo:hover {
-  color: var(--teal);
+  color: var(--acento);
 }
 
 .mazo-detalle {
   margin: 0;
   grid-column: 1;
   font-size: 0.78rem;
-  color: var(--tinta-clara-suave);
+  color: var(--tinta-suave);
 }
 
 .mazo-hoy {
@@ -1218,34 +1154,11 @@ button[disabled] {
   justify-self: end;
 }
 
-.pastilla-estudio {
-  display: inline-block;
-  font-size: 0.72rem;
-  font-weight: 650;
-  padding: 0.22rem 0.55rem;
-  border-radius: 999px;
-  background: var(--fondo-oscuro);
-  border: 1px solid var(--linea-oscura);
-  color: var(--tinta-clara-suave);
-  white-space: nowrap;
-}
-
-.pastilla-estudio.es-pendiente {
-  color: var(--ambar);
-  border-color: rgba(251, 191, 36, 0.4);
-  background: rgba(251, 191, 36, 0.1);
-}
-
-.pastilla-estudio.es-aldia {
-  color: var(--teal);
-  border-color: rgba(45, 212, 191, 0.35);
-  background: rgba(45, 212, 191, 0.08);
-}
-
-.pastilla-estudio.es-nueva {
-  color: #a5b4fc;
-  border-color: rgba(165, 180, 252, 0.35);
-  background: rgba(165, 180, 252, 0.1);
+/* Una tarjeta sin ver todavía: el mismo lenguaje que el resto de pastillas. */
+.pastilla-nueva {
+  background: var(--acento-suave);
+  border-color: #c7d2fe;
+  color: var(--acento);
 }
 
 .lista-tarjetas li {
@@ -1253,8 +1166,7 @@ button[disabled] {
   align-items: center;
   gap: 0.8rem;
   flex-wrap: wrap;
-  background: var(--superficie-alta);
-  border: 1px solid var(--linea-oscura);
+  border: 1px solid var(--linea);
   border-radius: var(--radio);
   padding: 0.7rem 0.9rem;
 }
@@ -1278,11 +1190,11 @@ button[disabled] {
 
 .tarjeta-fila-reverso {
   font-size: 0.8rem;
-  color: var(--tinta-clara-suave);
+  color: var(--tinta-suave);
 }
 
 .extracto-vacio {
-  color: #64748b;
+  color: #94a3b8;
   font-style: italic;
 }
 
@@ -1292,8 +1204,8 @@ button[disabled] {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
-  background: var(--superficie-alta);
-  border: 1px solid var(--linea-oscura);
+  background: #f8fafc;
+  border: 1px solid var(--linea);
   border-radius: var(--radio);
   padding: 1rem;
   margin-bottom: 1.1rem;
@@ -1310,25 +1222,25 @@ button[disabled] {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--tinta-clara-suave);
+  color: var(--tinta-suave);
 }
 
 .campo-tarjeta-caja {
-  background: var(--fondo-oscuro);
-  border: 1px solid var(--linea-oscura);
+  background: var(--superficie);
+  border: 1px solid var(--linea);
   border-radius: var(--radio);
   padding: 0.6rem 0.75rem;
   min-height: 4.5rem;
 }
 
 .campo-tarjeta-caja:focus-within {
-  border-color: var(--teal);
+  border-color: var(--acento);
 }
 
 .campo-cargando {
   margin: 0;
   font-size: 0.85rem;
-  color: var(--tinta-clara-suave);
+  color: var(--tinta-suave);
 }
 
 .acciones-editor-tarjeta {
@@ -1350,21 +1262,21 @@ button[disabled] {
   align-items: center;
   gap: 0.8rem;
   font-size: 0.78rem;
-  color: var(--tinta-clara-suave);
+  color: var(--tinta-suave);
 }
 
 .barra-progreso {
   flex: 1 1 auto;
   height: 4px;
   border-radius: 999px;
-  background: var(--superficie-alta);
+  background: var(--linea);
   overflow: hidden;
 }
 
 .barra-progreso span {
   display: block;
   height: 100%;
-  background: var(--teal);
+  background: var(--acento);
   transition: width 0.3s ease;
 }
 
@@ -1397,18 +1309,19 @@ button[disabled] {
   text-align: center;
   padding: 2rem 1.6rem;
   overflow: auto;
-  background: var(--superficie-oscura);
-  border: 1px solid var(--linea-oscura);
+  background: var(--superficie);
+  border: 1px solid var(--linea);
   border-radius: 16px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--sombra);
 }
 
+/* El reverso se distingue del anverso por el borde en el color de acento. */
 .cara-dorso {
   transform: rotateY(180deg);
-  border-color: rgba(45, 212, 191, 0.35);
+  border-color: #c7d2fe;
 }
 
-/* La tipografía propia para el contenido de la tarjeta: es el texto protagonista. */
+/* La tipografía propia para el contenido: es el texto protagonista. */
 .cara .texto-con-formato {
   font-family: 'Fraunces Variable', ui-serif, Georgia, serif;
   font-size: 1.4rem;
@@ -1419,43 +1332,20 @@ button[disabled] {
 }
 
 .cara-vacia {
-  color: var(--tinta-clara-suave);
+  color: var(--tinta-suave);
   font-style: italic;
   margin: 0;
 }
 
-/*
- * Los marcadores llevan un degradado pensado para fondo claro, y sobre el oscuro
- * quedarían ilegibles. Aquí se pintan como bloque de color con texto oscuro.
- */
-.seccion-estudio mark[data-color] {
-  background-image: none;
-  color: #0b1220;
-  padding: 0 0.18em;
-  border-radius: 3px;
-}
-
-.seccion-estudio mark[data-color='amarillo'] {
-  background-color: #fcd34d;
-}
-
-.seccion-estudio mark[data-color='verde'] {
-  background-color: #6ee7b7;
-}
-
-.seccion-estudio mark[data-color='rosa'] {
-  background-color: #f9a8d4;
-}
-
 /* ---------- Los cuatro botones ---------- */
 
-.boton-estudio-principal {
+.boton-ver-respuesta {
   align-self: center;
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  background: var(--teal);
-  color: #04201c;
+  background: var(--acento);
+  color: #fff;
   border: none;
   border-radius: var(--radio);
   padding: 0.75rem 1.6rem;
@@ -1463,14 +1353,14 @@ button[disabled] {
   font-size: 0.95rem;
 }
 
-.boton-estudio-principal:hover {
-  background: #5eead4;
+.boton-ver-respuesta:hover {
+  background: #4338ca;
 }
 
 .pista-tecla {
   font-size: 0.7rem;
   font-weight: 600;
-  opacity: 0.7;
+  opacity: 0.75;
   border: 1px solid currentColor;
   border-radius: 4px;
   padding: 0.05rem 0.3rem;
@@ -1482,7 +1372,11 @@ button[disabled] {
   gap: 0.6rem;
 }
 
-/* El color codifica la dificultad, así no hay que leer para saber cuál es cuál. */
+/*
+ * El color codifica la dificultad, así no hay que leer para saber cuál es cuál.
+ * Los cuatro tonos son los que ya usa la app en el aviso de guardado y en la
+ * paleta de los cuadros, para no introducir colores nuevos.
+ */
 .boton-respuesta {
   position: relative;
   display: flex;
@@ -1491,9 +1385,9 @@ button[disabled] {
   gap: 0.15rem;
   padding: 0.7rem 0.5rem;
   border-radius: var(--radio);
-  border: 1px solid var(--linea-oscura);
-  background: var(--superficie-alta);
-  color: var(--tinta-clara);
+  border: 1.5px solid var(--linea);
+  background: var(--superficie);
+  color: var(--tinta);
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
 }
 
@@ -1512,7 +1406,7 @@ button[disabled] {
 
 .respuesta-plazo {
   font-size: 0.72rem;
-  color: var(--tinta-clara-suave);
+  color: var(--tinta-suave);
 }
 
 .respuesta-tecla {
@@ -1520,59 +1414,55 @@ button[disabled] {
   top: 0.25rem;
   right: 0.35rem;
   font-size: 0.62rem;
-  color: #55647a;
+  color: #b6c2d1;
 }
 
 .boton-respuesta.es-otra_vez {
-  border-color: rgba(248, 113, 113, 0.4);
+  border-color: #fca5a5;
 }
 
 .boton-respuesta.es-otra_vez:hover {
-  background: rgba(248, 113, 113, 0.14);
-  border-color: var(--rojo-suave);
+  background: #fef2f2;
 }
 
 .boton-respuesta.es-otra_vez .respuesta-nombre {
-  color: var(--rojo-suave);
+  color: var(--peligro);
 }
 
 .boton-respuesta.es-dificil {
-  border-color: rgba(251, 191, 36, 0.35);
+  border-color: #fcd34d;
 }
 
 .boton-respuesta.es-dificil:hover {
-  background: rgba(251, 191, 36, 0.13);
-  border-color: var(--ambar);
+  background: #fffbeb;
 }
 
 .boton-respuesta.es-dificil .respuesta-nombre {
-  color: var(--ambar);
+  color: #b45309;
 }
 
 .boton-respuesta.es-bien {
-  border-color: rgba(45, 212, 191, 0.35);
+  border-color: #86efac;
 }
 
 .boton-respuesta.es-bien:hover {
-  background: rgba(45, 212, 191, 0.13);
-  border-color: var(--teal);
+  background: #f0fdf4;
 }
 
 .boton-respuesta.es-bien .respuesta-nombre {
-  color: var(--teal);
+  color: #15803d;
 }
 
 .boton-respuesta.es-facil {
-  border-color: rgba(125, 211, 252, 0.35);
+  border-color: #93c5fd;
 }
 
 .boton-respuesta.es-facil:hover {
-  background: rgba(125, 211, 252, 0.13);
-  border-color: #7dd3fc;
+  background: #eff6ff;
 }
 
 .boton-respuesta.es-facil .respuesta-nombre {
-  color: #7dd3fc;
+  color: #1d4ed8;
 }
 
 /* ---------- Resumen del final ---------- */
@@ -1592,7 +1482,7 @@ button[disabled] {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--teal);
+  color: var(--acento);
 }
 
 .estudio-fin h2 {
@@ -1604,7 +1494,7 @@ button[disabled] {
 
 .estudio-fin-detalle {
   margin: 0 0 1rem;
-  color: var(--tinta-clara-suave);
+  color: var(--tinta-suave);
   font-size: 0.92rem;
 }
 
@@ -1628,5 +1518,185 @@ button[disabled] {
   .barra-progreso span,
   .boton-respuesta {
     transition: none;
+  }
+}
+
+
+/* =========================================================================
+   Agenda de tareas
+   ========================================================================= */
+
+.agenda {
+  margin-bottom: 2rem;
+}
+
+.agenda-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.agenda-cabecera h2,
+.titulo-seccion {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.titulo-seccion {
+  margin-bottom: 0.9rem;
+}
+
+/* El día, en un tono suave: informa pero no compite con "Hoy". */
+.agenda-fecha {
+  font-weight: 500;
+  color: var(--tinta-suave);
+}
+
+.agenda-dia {
+  font-size: 0.9rem !important;
+  color: var(--tinta-suave);
+  text-transform: capitalize;
+}
+
+.agenda-caja {
+  background: var(--superficie);
+  border: 1px solid var(--linea);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.lista-tareas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fila-tarea {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--linea);
+}
+
+.fila-tarea:last-child {
+  border-bottom: none;
+}
+
+.marca-tarea {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.marca-tarea input {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  accent-color: var(--acento);
+  cursor: pointer;
+}
+
+.texto-tarea {
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+/* Una tarea hecha se tacha y se atenúa, pero sigue a la vista el resto del día. */
+.fila-tarea.hecha .texto-tarea {
+  text-decoration: line-through;
+  color: var(--tinta-suave);
+}
+
+.nota-tarea {
+  font-size: 0.76rem;
+  color: var(--tinta-suave);
+  white-space: nowrap;
+}
+
+/*
+ * Las acciones se revelan al acercarse a la fila, para que la lista se lea
+ * limpia. En una pantalla táctil no hay 'hover', así que ahí van siempre visibles
+ * (ver la consulta de más abajo).
+ */
+.acciones-tarea {
+  display: flex;
+  gap: 0.2rem;
+  flex: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.fila-tarea:hover .acciones-tarea,
+.fila-tarea:focus-within .acciones-tarea {
+  opacity: 1;
+}
+
+.editor-tarea {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.editor-tarea .entrada-nombre {
+  flex: 1 1 12rem;
+}
+
+.entrada-fecha {
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 0.4rem 0.5rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--tinta);
+  background: var(--superficie);
+}
+
+.entrada-fecha:focus {
+  outline: none;
+  border-color: var(--acento);
+}
+
+.agenda-pie {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.7rem;
+  border-top: 1px solid var(--linea);
+  background: #fcfdfe;
+}
+
+/* Sin tareas no hay lista, así que el pie es todo el panel y no necesita borde. */
+.agenda-caja > .agenda-pie:first-child {
+  border-top: none;
+}
+
+.agenda-vacia {
+  margin: 0 0.3rem 0 0.2rem;
+  font-size: 0.9rem;
+  color: var(--tinta-suave);
+}
+
+.fila-tarea.editando {
+  padding: 0.6rem 0.7rem;
+}
+
+/* La barra superior del historial no necesita separarse: ya hay un título debajo. */
+.barra-superior.sin-borde {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+@media (hover: none) {
+  .acciones-tarea {
+    opacity: 1;
   }
 }

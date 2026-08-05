@@ -4,17 +4,22 @@ import {
   guardarDocumento,
 } from '../almacenamiento/documentos'
 import {
+  hayAgendaPendiente,
+  limpiarAgendaPendiente,
   limpiarMazosPendiente,
   limpiarPendiente,
   leerMazosPendientes,
   leerPendientes,
   leerShas,
+  marcarAgendaPendiente,
   marcarMazosPendiente,
   marcarPendiente,
   olvidarSha,
   recordarSha,
   registrarSincronizacion,
 } from '../almacenamiento/estadoNube'
+import { VERSION_AGENDA, type DocumentoAgenda, type Tarea } from '../agenda/tipos'
+import { cargarAgenda, guardarAgenda, normalizarAgenda } from '../almacenamiento/agenda'
 import { cargarMazos, eliminarMazos, guardarMazos, normalizarDocumentoMazos } from '../almacenamiento/mazos'
 import {
   VERSION_MAZOS,
@@ -30,7 +35,7 @@ import {
   type DocumentoCuaderno,
   type IndiceCuadernos,
 } from '../tipos'
-import { RUTA_INDICE, rutaMateria, rutaMazos } from './configuracion'
+import { RUTA_AGENDA, RUTA_INDICE, rutaMateria, rutaMazos } from './configuracion'
 import { ClienteGitHub, ErrorConflicto } from './github'
 
 export type ResultadoSincronizacion = {
@@ -90,6 +95,43 @@ function unirPorId<T extends { id: string }>(preferidos: T[], otros: T[]): T[] {
  * en un segundo (se vuelve a borrar) y preferible a la alternativa, que era
  * perder todo lo escrito en uno de los dos lados.
  */
+function interpretarAgenda(contenido: string): DocumentoAgenda | null {
+  try {
+    return normalizarAgenda(JSON.parse(contenido))
+  } catch (error) {
+    console.error('La agenda remota no se pudo interpretar', error)
+    return null
+  }
+}
+
+/**
+ * Une las tareas de los dos lados. Para una que exista en ambos gana la versión
+ * tocada más tarde, que es justo para lo que la tarea guarda 'modificado': sin
+ * ese dato habría que elegir a ciegas entre un texto editado aquí y un visto
+ * bueno marcado allá.
+ *
+ * El argumento 'ganaLocal' solo decide los empates exactos, que en la práctica
+ * son tareas idénticas.
+ */
+export function fusionarAgendas(
+  local: DocumentoAgenda,
+  remoto: DocumentoAgenda,
+  ganaLocal: boolean,
+): DocumentoAgenda {
+  const preferido = ganaLocal ? local : remoto
+  const otro = ganaLocal ? remoto : local
+
+  const porId = new Map<string, Tarea>()
+  for (const tarea of otro.tareas ?? []) porId.set(tarea.id, tarea)
+
+  for (const tarea of preferido.tareas ?? []) {
+    const previa = porId.get(tarea.id)
+    if (!previa || tarea.modificado >= previa.modificado) porId.set(tarea.id, tarea)
+  }
+
+  return { version: VERSION_AGENDA, tareas: [...porId.values()] }
+}
+
 function interpretarMazos(contenido: string): DocumentoMazos | null {
   try {
     return normalizarDocumentoMazos(JSON.parse(contenido))
@@ -202,6 +244,11 @@ function fusionarEntrada(a: Cuaderno, b: Cuaderno): Cuaderno {
   }
 }
 
+/** La fecha de la agenda se resuelve por separado, como las de cada materia. */
+function fechaDeAgendaMasReciente(a: IndiceCuadernos, b: IndiceCuadernos): number {
+  return Math.max(a.agendaModificado ?? 0, b.agendaModificado ?? 0)
+}
+
 export function fusionarIndices(
   local: IndiceCuadernos,
   remoto: IndiceCuadernos,
@@ -224,6 +271,7 @@ export function fusionarIndices(
         ? (local.ultimoCuaderno ?? remoto.ultimoCuaderno ?? null)
         : (remoto.ultimoCuaderno ?? local.ultimoCuaderno ?? null),
     actualizado: masReciente,
+    agendaModificado: fechaDeAgendaMasReciente(local, remoto),
   }
 }
 
@@ -351,7 +399,33 @@ export async function sincronizar(cliente: ClienteGitHub): Promise<ResultadoSinc
     )
   }
 
-  // ---- 3. Índice al final ----
+  /*
+   * ---- 3. La agenda ----
+   * No cuelga de ninguna materia, así que va fuera del bucle y su fecha de
+   * modificación se compara contra la del índice, no contra la de un cuaderno.
+   */
+  anotar(
+    await sincronizarArchivo(
+      cliente,
+      {
+        ruta: RUTA_AGENDA,
+        etiqueta: 'la agenda',
+        cargar: cargarAgenda,
+        guardar: guardarAgenda,
+        interpretar: interpretarAgenda,
+        fusionar: fusionarAgendas,
+        quitarPendiente: limpiarAgendaPendiente,
+      },
+      {
+        tienePendiente: hayAgendaPendiente(),
+        remotoEsMasNuevo: (remoto.agendaModificado ?? 0) > (local.agendaModificado ?? 0),
+        ganaLocal: (local.agendaModificado ?? 0) >= (remoto.agendaModificado ?? 0),
+      },
+    ),
+    'la agenda',
+  )
+
+  // ---- 4. Índice al final ----
   const indiceFinal = await subirIndice(cliente, fusionado)
 
   escribirIndice(indiceFinal)
@@ -523,4 +597,9 @@ export function anotarCambioLocal(idCuaderno: string): void {
 /** Lo mismo para los mazos, que van en su propio archivo. */
 export function anotarCambioMazos(idCuaderno: string): void {
   marcarMazosPendiente(idCuaderno)
+}
+
+/** Y para la agenda, de la que solo hay una. */
+export function anotarCambioAgenda(): void {
+  marcarAgendaPendiente()
 }

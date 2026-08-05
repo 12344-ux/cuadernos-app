@@ -76,12 +76,12 @@ export function EditorTarjeta({
       />
 
       <div className="acciones-editor-tarjeta">
-        <button type="button" className="boton-oscuro-suave" onClick={onCancelar}>
+        <button type="button" className="boton-discreto" onClick={onCancelar}>
           Cancelar
         </button>
         <button
           type="button"
-          className="boton-oscuro-principal"
+          className="boton-primario"
           onClick={() => onGuardar(anverso, reverso)}
         >
           {etiquetaGuardar}

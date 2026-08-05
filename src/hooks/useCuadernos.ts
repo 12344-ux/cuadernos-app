@@ -14,10 +14,12 @@ type Opciones = {
   alCambiar?: (idCuaderno: string) => void
   /** Lo mismo para los mazos, que viajan en su propio archivo. */
   alCambiarMazos?: (idCuaderno: string) => void
+  /** Y para la agenda, que no pertenece a ninguna materia. */
+  alCambiarAgenda?: () => void
 }
 
 /** Estado y operaciones sobre la lista de materias. */
-export function useCuadernos({ alCambiar, alCambiarMazos }: Opciones = {}) {
+export function useCuadernos({ alCambiar, alCambiarMazos, alCambiarAgenda }: Opciones = {}) {
   const [indice, setIndice] = useState<IndiceCuadernos>(() => leerIndice())
 
   /** Solo las que la interfaz debe mostrar: las lápidas quedan fuera. */
@@ -152,6 +154,17 @@ export function useCuadernos({ alCambiar, alCambiarMazos }: Opciones = {}) {
     [aplicar, alCambiarMazos],
   )
 
+  /**
+   * La llama la agenda tras guardar.
+   *
+   * La fecha va en la raíz del índice y no en una materia, porque la agenda no
+   * pertenece a ninguna: así apuntar una tarea no hace parecer que un mapa cambió.
+   */
+  const marcarActividadAgenda = useCallback(() => {
+    aplicar((previo) => ({ ...previo, agendaModificado: Date.now() }))
+    alCambiarAgenda?.()
+  }, [aplicar, alCambiarAgenda])
+
   /** Recuerda dónde se quedó el usuario, para retomarlo en otro dispositivo. */
   const recordarUltimoCuaderno = useCallback(
     (id: string | null) => {
@@ -174,6 +187,7 @@ export function useCuadernos({ alCambiar, alCambiarMazos }: Opciones = {}) {
     alternarArchivado,
     marcarActividad,
     marcarActividadMazos,
+    marcarActividadAgenda,
     recordarUltimoCuaderno,
     recargar,
     sembrarSiVacio,

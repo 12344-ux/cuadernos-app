@@ -48,6 +48,36 @@ pero:
   para que siga diciendo cuántas ideas hay realmente en el mapa.
 - Se distingue de un vistazo por el giro, la sombra, la esquina doblada y el amarillo de partida.
 
+## Agenda de tareas
+
+Vive en la pantalla de inicio, **encima de las materias**: al abrir la app, lo primero que hace falta
+saber es qué toca hoy. No pertenece a ninguna materia, así que borrar una asignatura no se lleva las
+tareas.
+
+La regla de qué se ve es una sola línea:
+
+> Aparece en la agenda de hoy si **su día ya llegó y sigue pendiente**, o si **se completó hoy**.
+
+De ahí sale el comportamiento importante: **nada se pierde**. Una tarea del día 2 sin hacer sigue
+apareciendo el 5, el 6 y el 20, marcada con «del 2 ago», hasta que se complete. Y una que se marca hoy
+se queda tachada a la vista el resto del día, por si fue un clic equivocado; mañana ya estará solo en
+el historial.
+
+Una tarea con fecha futura no aparece hasta que llega su día. Sin fecha, es para hoy. El selector de
+fecha es el nativo del navegador, así que en el móvil sale el calendario del teléfono.
+
+El **historial** está en `#/agenda`: lo completado, agrupado por el día en que tocaba, y de paso lo
+que queda programado para más adelante. Desde ahí se puede desmarcar una tarea, que vuelve a la
+agenda.
+
+Dos campos de cada tarea no se ven pero hacen falta:
+
+- **`modificado`** permite combinar dos dispositivos sin adivinar. Si editas el texto en el portátil y
+  marcas la misma tarea en el móvil, gana la versión tocada más tarde. En una lista de tareas
+  equivocarse en esto se nota mucho más que en un mapa con cien cuadros.
+- **`eliminada`** es una lápida, igual que en el índice de materias. Si la tarea se quitara del
+  archivo sin más, al sincronizar con un dispositivo que todavía la tuviera reaparecería.
+
 ## Flashcards
 
 Cada materia tiene su propia sección de repaso, a la que se entra con el botón **Flashcards** del
@@ -55,9 +85,10 @@ lienzo (`#/c/<id>/flashcards`). Dentro se crean mazos, y en cada mazo tarjetas c
 usando el mismo editor enriquecido que los cuadros del mapa: negrilla, cursiva, subrayado y marcador
 seleccionando el texto.
 
-La sección va en **modo oscuro** mientras el resto de la app sigue en claro. Es deliberado: es un
-modo de concentración. Entrar a estudiar apaga la interfaz del mapa y deja la tarjeta como único
-foco; al salir, todo vuelve a su aspecto habitual.
+Usa la misma paleta que el resto de la app, con las mismas clases de botón y pastilla que el selector
+de materias. Lo único propio de esta pantalla es la tarjeta que se voltea y los cuatro botones de
+respuesta, donde el color sí distingue la dificultad (rojo, ámbar, verde y azul, tomados de los tonos
+que ya usaba la app).
 
 En la sesión de repaso, `espacio` voltea la tarjeta y las teclas `1`-`4` responden.
 
@@ -98,9 +129,14 @@ Los apuntes se guardan en el repositorio privado **`12344-ux/cuadernos-data`**:
 
 ```
 indice.json            lista de materias, fechas y última materia abierta
+agenda.json            la agenda de tareas
 materias/<id>.json     el lienzo de cada materia
 mazos/<id>.json        las flashcards de cada materia
 ```
+
+La agenda va en la raíz porque no pertenece a ninguna materia, y su fecha de modificación
+(`agendaModificado`) vive en la raíz del índice por el mismo motivo: así apuntar una tarea no hace
+parecer que cambió ningún mapa.
 
 El mapa y las flashcards van en archivos separados a propósito, y cada uno lleva su propia fecha de
 modificación en el índice (`modificado` y `mazosModificado`). Si compartieran archivo, repasar una
@@ -256,9 +292,9 @@ La `base` de Vite es `'./'` (rutas relativas), así que el mismo build sirve tan
 
 ## Estado
 
-Fases 1, 3 y 4 completadas, más el formato de texto enriquecido, los post-its y las flashcards con
-SM-2. Pendiente: panel de notas rápidas (Fase 2), crear una flashcard directamente desde un cuadro
-del mapa, y el resto de mejoras de interfaz.
+Fases 1, 3 y 4 completadas, más el formato de texto enriquecido, los post-its, las flashcards con
+SM-2 y la agenda de tareas. Pendiente: panel de notas rápidas (Fase 2), crear una flashcard
+directamente desde un cuadro del mapa, y el resto de mejoras de interfaz.
 
 ## Licencias
 
