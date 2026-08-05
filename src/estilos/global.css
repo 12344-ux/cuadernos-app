@@ -68,6 +68,23 @@ button {
   background: #f8fafc;
 }
 
+/* El propio botón tiene el aspecto de una nota adhesiva. */
+.boton-postit {
+  border-radius: var(--radio);
+  border: 1px solid #fcd34d;
+  padding: 0.5rem 0.9rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  background: #fffbeb;
+  color: #854d0e;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.boton-postit:hover {
+  background: #fef3c7;
+  border-color: #fbbf24;
+}
+
 /* ---------- Selector de cuadernos ---------- */
 
 .selector {
@@ -322,29 +339,68 @@ button {
   background: #fef2f2;
 }
 
-/* ---------- Cuadro de texto en el lienzo ---------- */
+/* ---------- Elementos del lienzo: cuadros y post-its ---------- */
 
-.nodo-texto {
+.elemento-lienzo {
+  position: relative;
   width: 100%;
   height: 100%;
   border: 1.5px solid;
-  border-radius: 12px;
   padding: 0.6rem 0.7rem;
-  font-size: 0.875rem;
   line-height: 1.45;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
   overflow: hidden;
   display: flex;
 }
 
-.nodo-texto.seleccionado {
+.es-cuadro {
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.es-cuadro.seleccionado {
   box-shadow: 0 0 0 2px var(--acento);
+}
+
+/*
+ * El post-it se distingue de un cuadro por cuatro señales que se suman, y
+ * ninguna depende del color (que es configurable y podría coincidir): esquinas
+ * casi rectas, giro leve, sombra proyectada y esquina doblada. La quinta, la más
+ * importante, es que no dibuja puntos de conexión.
+ */
+.es-postit {
+  border-radius: 2px;
+  transform: rotate(-1.2deg);
+  box-shadow: 0 5px 14px rgba(15, 23, 42, 0.16), 0 1px 2px rgba(15, 23, 42, 0.1);
+}
+
+.es-postit.seleccionado {
+  box-shadow: 0 0 0 2px var(--acento), 0 5px 14px rgba(15, 23, 42, 0.16);
+}
+
+/*
+ * Esquina doblada. Se dibuja dentro del papel en lugar de recortarlo con
+ * clip-path porque el recorte se llevaría por delante la sombra y el anillo de
+ * selección, que se pintan fuera del borde.
+ */
+.es-postit::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(
+    135deg,
+    transparent 44%,
+    var(--tono-borde) 44% 54%,
+    rgba(255, 255, 255, 0.92) 54%
+  );
+  box-shadow: -1px -1px 2px rgba(15, 23, 42, 0.1);
+  pointer-events: none;
 }
 
 .nodo-contenido {
   width: 100%;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
   overflow: hidden;
 }
 
@@ -353,24 +409,117 @@ button {
   font-style: italic;
 }
 
-.resaltado {
-  /* Marcador que respeta los saltos de línea, a diferencia de un fondo plano. */
-  background: linear-gradient(transparent 22%, rgba(250, 204, 21, 0.6) 22%);
+/* ---------- Tipografía, tamaño y alineación por elemento ---------- */
+
+.fuente-sistema {
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+}
+
+.fuente-serif {
+  font-family: ui-serif, Georgia, 'Times New Roman', Times, serif;
+}
+
+.fuente-mono {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+}
+
+.fuente-fraunces {
+  font-family: 'Fraunces Variable', ui-serif, Georgia, serif;
+}
+
+.tamano-pequeno {
+  font-size: 0.75rem;
+}
+
+.tamano-normal {
+  font-size: 0.875rem;
+}
+
+.tamano-titulo {
+  font-size: 1.2rem;
+  line-height: 1.28;
+  font-weight: 620;
+}
+
+.alineacion-izquierda {
+  text-align: left;
+}
+
+.alineacion-centro {
+  text-align: center;
+}
+
+.alineacion-derecha {
+  text-align: right;
+}
+
+/* ---------- Texto con formato, en reposo y en edición ---------- */
+
+.texto-con-formato,
+.envoltorio-editor {
+  width: 100%;
+  height: 100%;
+}
+
+.envoltorio-editor {
+  overflow: auto;
+}
+
+.nodo-editor {
+  min-height: 100%;
+  outline: none;
+}
+
+.texto-con-formato p,
+.nodo-editor p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.texto-con-formato p + p,
+.nodo-editor p + p {
+  margin-top: 0.32em;
+}
+
+.nodo-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--tinta-suave);
+  font-style: italic;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/*
+ * Marcador de texto. El fondo es un degradado que arranca al 22% de la altura
+ * para que parezca un subrayador y no un rectángulo de color, y así respeta los
+ * saltos de línea cuando la frase resaltada ocupa varias.
+ *
+ * El color real vive aquí y no en el documento: en el HTML guardado solo consta
+ * la clave del marcador ('data-color'), de modo que estos tonos se pueden
+ * retocar sin migrar ningún cuaderno.
+ */
+.texto-con-formato mark[data-color],
+.nodo-editor mark[data-color] {
+  /* Hay que anular el amarillo plano que los navegadores dan a <mark>. */
+  background-color: transparent;
+  background-image: linear-gradient(transparent 22%, var(--trazo) 22%);
+  color: inherit;
   padding: 0 0.1em;
   border-radius: 2px;
 }
 
-.nodo-area {
-  width: 100%;
-  height: 100%;
-  border: none;
-  outline: none;
-  resize: none;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  line-height: inherit;
-  padding: 0;
+mark[data-color='amarillo'] {
+  --trazo: rgba(250, 204, 21, 0.6);
+}
+
+mark[data-color='verde'] {
+  --trazo: rgba(74, 222, 128, 0.55);
+}
+
+mark[data-color='rosa'] {
+  --trazo: rgba(244, 114, 182, 0.5);
 }
 
 .punto-conexion {
@@ -393,17 +542,33 @@ button {
   transform: scale(1.25);
 }
 
-/* ---------- Barra flotante del cuadro ---------- */
+/* ---------- Barras flotantes ---------- */
 
+/*
+ * Hay dos barras y la división es deliberada: en esta, la del elemento, va todo
+ * lo que afecta al cuadro completo (color, tipografía, tamaño, alineación); en
+ * '.barra-texto' solo el énfasis de lo que hay seleccionado. Juntarlas daría una
+ * sola barra de más de veinte controles flotando sobre un cuadro de 220 px.
+ */
 .barra-nodo {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  white-space: nowrap;
   background: var(--superficie);
   border: 1px solid var(--linea);
   border-radius: var(--radio);
   box-shadow: var(--sombra);
   padding: 0.3rem 0.4rem;
+}
+
+/*
+ * La barra de texto la coloca Floating UI con posición fija y colgada del body,
+ * fuera del contenedor que React Flow escala al hacer zoom. Necesita un z-index
+ * alto porque ya no está dentro de la pila del lienzo.
+ */
+.barra-texto {
+  z-index: 40;
 }
 
 .muestra-color {
@@ -416,6 +581,76 @@ button {
 
 .muestra-color.activa {
   box-shadow: 0 0 0 2px var(--acento);
+}
+
+/* Cuadrados y no redondos, para no confundirlos con los colores del cuadro. */
+.muestra-marcador {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  border: 1.5px solid;
+  padding: 0;
+}
+
+.muestra-marcador.marcador-amarillo {
+  background: rgba(250, 204, 21, 0.65);
+  border-color: #eab308;
+}
+
+.muestra-marcador.marcador-verde {
+  background: rgba(74, 222, 128, 0.6);
+  border-color: #22c55e;
+}
+
+.muestra-marcador.marcador-rosa {
+  background: rgba(244, 114, 182, 0.55);
+  border-color: #ec4899;
+}
+
+.muestra-marcador.activa {
+  box-shadow: 0 0 0 2px var(--acento);
+}
+
+.selector-fuente {
+  border: 1px solid var(--linea);
+  border-radius: 6px;
+  padding: 0.22rem 0.3rem;
+  font-size: 0.75rem;
+  background: var(--superficie);
+  color: var(--tinta);
+  max-width: 7rem;
+}
+
+/* Cada botón muestra su propio tamaño: la 'A' crece con la opción. */
+.boton-tamano {
+  min-width: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.boton-tamano.es-pequeno {
+  font-size: 0.62rem;
+}
+
+.boton-tamano.es-normal {
+  font-size: 0.78rem;
+}
+
+.boton-tamano.es-titulo {
+  font-size: 1rem;
+}
+
+.boton-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.36rem;
+}
+
+/* La N, la K y la S se muestran ya con su propio formato. */
+.boton-formato {
+  min-width: 1.5rem;
+  font-size: 0.84rem;
 }
 
 .separador-barra {

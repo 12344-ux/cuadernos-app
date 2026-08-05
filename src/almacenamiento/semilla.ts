@@ -1,5 +1,10 @@
 import { MarkerType } from '@xyflow/react'
-import { VERSION_DOCUMENTO, type Cuaderno, type DocumentoCuaderno } from '../tipos'
+import {
+  VERSION_DOCUMENTO,
+  datosNodoPorDefecto,
+  type Cuaderno,
+  type DocumentoCuaderno,
+} from '../tipos'
 import { guardarDocumento } from './documentos'
 import { escribirIndice, leerIndice, nuevoId } from './indice'
 
@@ -20,7 +25,15 @@ function documentoDemo(): DocumentoCuaderno {
         position: { x: 0, y: 0 },
         width: 220,
         height: 90,
-        data: { texto: 'La célula', color: 'azul', resaltado: false },
+        data: {
+          ...datosNodoPorDefecto(),
+          contenido: '<p>La célula</p>',
+          color: 'azul',
+          // El nodo raíz enseña de paso la tipografía propia y el tamaño título.
+          fuente: 'fraunces',
+          tamano: 'titulo',
+          alineacion: 'centro',
+        },
       },
       {
         id: 'demo-2',
@@ -29,9 +42,10 @@ function documentoDemo(): DocumentoCuaderno {
         width: 220,
         height: 110,
         data: {
-          texto: 'Procariota\nSin núcleo definido',
+          ...datosNodoPorDefecto(),
+          contenido:
+            '<p><strong>Procariota</strong></p><p><mark data-color="verde">Sin núcleo definido</mark></p>',
           color: 'verde',
-          resaltado: false,
         },
       },
       {
@@ -41,10 +55,26 @@ function documentoDemo(): DocumentoCuaderno {
         width: 220,
         height: 110,
         data: {
-          texto: 'Eucariota\nCon núcleo y organelos',
+          ...datosNodoPorDefecto(),
+          contenido:
+            '<p><strong>Eucariota</strong></p><p><mark data-color="amarillo">Con núcleo y organelos</mark></p>',
           color: 'amarillo',
-          resaltado: true,
         },
+      },
+      {
+        // Muestra para qué sirve un post-it: una duda al margen del mapa, sin
+        // flechas que la aten a ningún concepto.
+        id: 'demo-postit',
+        type: 'postit',
+        position: { x: 420, y: 20 },
+        width: 180,
+        height: 150,
+        data: {
+          ...datosNodoPorDefecto(),
+          contenido: '<p><mark data-color="rosa">¿Entra la mitosis en el examen?</mark></p>',
+          color: 'rosa',
+        },
+        connectable: false,
       },
     ],
     edges: [
@@ -87,7 +117,8 @@ export async function aplicarSemillaSiHaceFalta(): Promise<Cuaderno[] | null> {
     creado: ahora,
     modificado: ahora,
     archivado: false,
-    numIdeas: demo.nodes.length,
+    // Coherente con el contador del lienzo: los post-its no son ideas.
+    numIdeas: demo.nodes.filter((nodo) => nodo.type === 'texto').length,
   }
   const quimica: Cuaderno = {
     id: nuevoId(),
