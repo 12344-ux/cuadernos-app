@@ -23,17 +23,26 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { guardarDocumento } from '../almacenamiento/documentos'
 import { nuevoId } from '../almacenamiento/indice'
 import {
-  COLOR_POR_DEFECTO,
   PALETA,
   VERSION_DOCUMENTO,
+  datosNodoPorDefecto,
   type DocumentoCuaderno,
   type EstadoGuardado,
-  type NodoTexto,
+  type NodoCuaderno,
+  type TipoElemento,
 } from '../tipos'
+import { precargarEditor } from './editorDiferido'
+import { NodoPostit as ComponenteNodoPostit } from './NodoPostit'
 import { NodoTexto as ComponenteNodoTexto } from './NodoTexto'
 
 /** Fuera del componente: si se recreara en cada render, React Flow remontaría todos los nodos. */
-const TIPOS_DE_NODO: NodeTypes = { texto: ComponenteNodoTexto }
+const TIPOS_DE_NODO: NodeTypes = { texto: ComponenteNodoTexto, postit: ComponenteNodoPostit }
+
+/** Medidas de partida de cada tipo de elemento. */
+const MEDIDAS_NUEVAS: Record<TipoElemento, { ancho: number; alto: number }> = {
+  texto: { ancho: 220, alto: 90 },
+  postit: { ancho: 180, alto: 150 },
+}
 
 const OPCIONES_ARISTA = {
   markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18 },
@@ -49,7 +58,7 @@ type PropsLienzo = {
 }
 
 /** Decide si un lote de cambios merece guardar en disco. */
-function cambiosRelevantes(cambios: NodeChange<NodoTexto>[] | EdgeChange<Edge>[]): boolean {
+function cambiosRelevantes(cambios: NodeChange<NodoCuaderno>[] | EdgeChange<Edge>[]): boolean {
   return cambios.some((cambio) => {
     // Seleccionar un cuadro no cambia el contenido del cuaderno.
     if (cambio.type === 'select') return false
@@ -61,7 +70,7 @@ function cambiosRelevantes(cambios: NodeChange<NodoTexto>[] | EdgeChange<Edge>[]
 }
 
 export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo) {
-  const [nodes, setNodes, onNodesChange] = useNodesState<NodoTexto>(documentoInicial.nodes)
+  const [nodes, setNodes, onNodesChange] = useNodesState<NodoCuaderno>(documentoInicial.nodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(documentoInicial.edges)
   const [estado, setEstado] = useState<EstadoGuardado>('inactivo')
   const [version, setVersion] = useState(0)
@@ -83,12 +92,12 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
     onGuardadoRef.current = onGuardado
   }, [nodes, edges, onGuardado])
 
-  const { screenToFlowPosition, fitView } = useReactFlow<NodoTexto>()
+  const { screenToFlowPosition, fitView, getNode } = useReactFlow<NodoCuaderno>()
 
   const marcarCambio = useCallback(() => setVersion((previa) => previa + 1), [])
 
   const alCambiarNodos = useCallback(
-    (cambios: NodeChange<NodoTexto>[]) => {
+    (cambios: NodeChange<NodoCuaderno>[]) => {
       onNodesChange(cambios)
       if (cambiosRelevantes(cambios)) marcarCambio()
     },
@@ -121,7 +130,7 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
   )
 
   const crearNodo = useCallback(
-    (posicionPantalla?: { x: number; y: number }) => {
+    (tipo: TipoElemento, posicionPantalla?: { x: number; y: number }) => {
       const caja = contenedorRef.current?.getBoundingClientRect()
       const punto =
         posicionPantalla ??
@@ -130,21 +139,46 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
           : { x: window.innerWidth / 2, y: window.innerHeight / 2 })
 
       const posicion = screenToFlowPosition(punto)
-      const nodo: NodoTexto = {
+      const { ancho, alto } = MEDIDAS_NUEVAS[tipo]
+      const nodo: NodoCuaderno = {
         id: nuevoId(),
-        type: 'texto',
-        // Se descuenta la mitad del tamaño para que el cuadro quede centrado en el clic.
-        position: { x: posicion.x - 110, y: posicion.y - 45 },
-        width: 220,
-        height: 90,
-        data: { texto: '', color: COLOR_POR_DEFECTO, resaltado: false, autoenfocar: true },
+        type: tipo,
+        // Se descuenta la mitad del tamaño para que quede centrado en el clic.
+        position: { x: posicion.x - ancho / 2, y: posicion.y - alto / 2 },
+        width: ancho,
+        height: alto,
+        data: {
+          ...datosNodoPorDefecto(),
+          // Un post-it nace amarillo, como una nota adhesiva de verdad. Los siete
+          // colores siguen disponibles, pero el de partida ya lo distingue de un
+          // cuadro sin tener que mirar la forma.
+          ...(tipo === 'postit' ? { color: 'amarillo' as const } : {}),
+          autoenfocar: true,
+        },
         selected: true,
-      }
+        // Refuerza la ausencia de handles: un post-it no admite flechas.
+        ...(tipo === 'postit' ? { connectable: false } : {}),
+      } as NodoCuaderno
 
       setNodes((previos) => [...previos.map((n) => ({ ...n, selected: false })), nodo])
       marcarCambio()
     },
     [screenToFlowPosition, setNodes, marcarCambio],
+  )
+
+  /**
+   * Un post-it queda fuera de la estructura del mapa. No dibuja puntos de
+   * conexión, así que en la práctica no hay por dónde engancharlo, pero se
+   * comprueba igual: ConnectionMode.Loose es permisivo y no conviene que la
+   * garantía dependa solo de que un componente no renderice algo.
+   */
+  const conexionValida = useCallback(
+    (conexion: Edge | Connection) => {
+      const origen = conexion.source ? getNode(conexion.source) : undefined
+      const destino = conexion.target ? getNode(conexion.target) : undefined
+      return origen?.type !== 'postit' && destino?.type !== 'postit'
+    },
+    [getNode],
   )
 
   /**
@@ -156,7 +190,7 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
     (evento: React.MouseEvent<HTMLDivElement>) => {
       const objetivo = evento.target as HTMLElement
       if (!objetivo.classList.contains('react-flow__pane')) return
-      crearNodo({ x: evento.clientX, y: evento.clientY })
+      crearNodo('texto', { x: evento.clientX, y: evento.clientY })
     },
     [crearNodo],
   )
@@ -174,7 +208,10 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
       }
       await guardarDocumento(idCuaderno, documento)
       setEstado('guardado')
-      onGuardadoRef.current(nodosActuales.length)
+      // Los post-its no cuentan como ideas: son notas sueltas, no conceptos de
+      // la estructura del mapa. Si contaran, el número de la tarjeta dejaría de
+      // decir cuántas ideas hay realmente conectadas.
+      onGuardadoRef.current(nodosActuales.filter((nodo) => nodo.type === 'texto').length)
     } catch (error) {
       console.error('No se pudo guardar el cuaderno', error)
       setEstado('error')
@@ -200,6 +237,12 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
     return () => window.clearTimeout(temporizador)
   }, [version, guardar])
 
+  // Si se abre un cuaderno es muy probable que se acabe escribiendo en él, así
+  // que el editor se trae en segundo plano antes de que haga falta.
+  useEffect(() => {
+    precargarEditor()
+  }, [])
+
   // Guarda lo pendiente si se cierra la pestaña en medio del retardo.
   useEffect(() => {
     const alSalir = () => {
@@ -222,19 +265,20 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
     }
   }, [estado])
 
-  const colorDeMinimapa = useCallback((nodo: NodoTexto) => {
+  const colorDeMinimapa = useCallback((nodo: NodoCuaderno) => {
     return (PALETA[nodo.data.color] ?? PALETA.pizarra).mini
   }, [])
 
   return (
     <div className="lienzo" ref={contenedorRef} onDoubleClick={alDobleClic}>
-      <ReactFlow<NodoTexto, Edge>
+      <ReactFlow<NodoCuaderno, Edge>
         nodes={nodes}
         edges={edges}
         onNodesChange={alCambiarNodos}
         onEdgesChange={alCambiarAristas}
         onConnect={alConectar}
         onReconnect={alReconectar}
+        isValidConnection={conexionValida}
         nodeTypes={TIPOS_DE_NODO}
         defaultEdgeOptions={OPCIONES_ARISTA}
         // Loose permite conectar desde cualquier lado sin distinguir entrada/salida.
@@ -276,8 +320,16 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
         />
 
         <Panel position="top-left" className="panel-herramientas">
-          <button type="button" className="boton-primario" onClick={() => crearNodo()}>
+          <button type="button" className="boton-primario" onClick={() => crearNodo('texto')}>
             + Añadir cuadro
+          </button>
+          <button
+            type="button"
+            className="boton-postit"
+            title="Una nota suelta, sin flechas ni conexiones"
+            onClick={() => crearNodo('postit')}
+          >
+            + Post-it
           </button>
           <button type="button" className="boton-secundario" onClick={() => void fitView({ padding: 0.25 })}>
             Ajustar vista
@@ -285,7 +337,10 @@ export function Lienzo({ idCuaderno, documentoInicial, onGuardado }: PropsLienzo
         </Panel>
 
         <Panel position="bottom-center" className="panel-ayuda">
-          <span>Doble clic en el fondo para crear · arrastra desde un borde para conectar</span>
+          <span>
+            Doble clic en el fondo para crear · arrastra desde un borde para conectar · selecciona
+            texto para darle formato
+          </span>
         </Panel>
       </ReactFlow>
 
