@@ -951,63 +951,682 @@ button[disabled] {
   justify-content: flex-end;
 }
 
-/* ---------- Conflictos ---------- */
 
-.capa-modal {
+/* =========================================================================
+   Flashcards: modo estudio
+   =========================================================================
+   La sección va en oscuro mientras el resto de la app sigue en claro, y es
+   deliberado: es un modo de concentración. Entrar a estudiar apaga la interfaz
+   del mapa y deja la tarjeta como único foco.
+
+   Los colores se declaran como propiedades del propio contenedor para que no se
+   escapen al resto de la aplicación.
+   ========================================================================= */
+
+.seccion-estudio {
+  --fondo-oscuro: #0d1520;
+  --superficie-oscura: #16202e;
+  --superficie-alta: #1e2a3a;
+  --linea-oscura: #2b3849;
+  --tinta-clara: #e9eff6;
+  --tinta-clara-suave: #93a3b5;
+  --teal: #2dd4bf;
+  --teal-hundido: #0f766e;
+  --ambar: #fbbf24;
+  --rojo-suave: #f87171;
+
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
-  display: grid;
-  place-items: center;
-  padding: 1.5rem;
-  z-index: 100;
-}
-
-.modal {
-  background: var(--superficie);
-  border-radius: 14px;
-  box-shadow: var(--sombra);
-  padding: 1.5rem;
-  width: 100%;
-  max-width: 34rem;
-  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--fondo-oscuro);
+  color: var(--tinta-clara);
   overflow: auto;
 }
 
-.modal h2 {
-  margin: 0 0 0.3rem;
+.barra-estudio {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1.2rem;
+  border-bottom: 1px solid var(--linea-oscura);
+  background: rgba(13, 21, 32, 0.9);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.titulo-estudio h1 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.titulo-estudio-marca {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--teal);
+}
+
+.cuerpo-estudio {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 54rem;
+  margin: 0 auto;
+  padding: 1.6rem 1.2rem 3rem;
+}
+
+/* ---------- Botones del modo oscuro ---------- */
+
+.boton-oscuro-principal,
+.boton-oscuro-suave,
+.boton-oscuro-peligro {
+  border-radius: var(--radio);
+  border: 1px solid transparent;
+  padding: 0.5rem 0.85rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.boton-oscuro-principal.pequeno,
+.boton-oscuro-suave.pequeno,
+.boton-oscuro-peligro.pequeno {
+  padding: 0.32rem 0.6rem;
+  font-size: 0.78rem;
+}
+
+.boton-oscuro-principal {
+  background: var(--teal);
+  color: #04201c;
+}
+
+.boton-oscuro-principal:hover:not(:disabled) {
+  background: #5eead4;
+}
+
+.boton-oscuro-principal:disabled {
+  background: var(--superficie-alta);
+  color: var(--tinta-clara-suave);
+  cursor: not-allowed;
+}
+
+.boton-oscuro-suave {
+  background: var(--superficie-alta);
+  border-color: var(--linea-oscura);
+  color: var(--tinta-clara);
+}
+
+.boton-oscuro-suave:hover {
+  border-color: #3d4d63;
+  background: #26344a;
+}
+
+.boton-oscuro-peligro {
+  background: transparent;
+  border-color: transparent;
+  color: var(--tinta-clara-suave);
+}
+
+.boton-oscuro-peligro:hover {
+  color: var(--rojo-suave);
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.campo-oscuro {
+  flex: 1 1 auto;
+  background: var(--fondo-oscuro);
+  border: 1px solid var(--linea-oscura);
+  border-radius: var(--radio);
+  padding: 0.5rem 0.7rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--tinta-clara);
+}
+
+.campo-oscuro:focus {
+  outline: none;
+  border-color: var(--teal);
+}
+
+/* El botón que lleva a las flashcards desde el lienzo, en la app clara. */
+.boton-flashcards {
+  border-radius: var(--radio);
+  border: 1px solid #99f6e4;
+  padding: 0.5rem 0.9rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  background: #f0fdfa;
+  color: #0f766e;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.boton-flashcards:hover {
+  background: #ccfbf1;
+  border-color: #5eead4;
+}
+
+/* ---------- Paneles, mazos y tarjetas ---------- */
+
+.panel-oscuro {
+  background: var(--superficie-oscura);
+  border: 1px solid var(--linea-oscura);
+  border-radius: 14px;
+  padding: 1.2rem;
+}
+
+.cabecera-mazos,
+.cabecera-mazo {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.1rem;
+}
+
+.cabecera-mazos h2,
+.cabecera-mazo h2 {
+  margin: 0;
   font-size: 1.15rem;
 }
 
-.lista-conflictos {
+.cabecera-mazo-detalle {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: var(--tinta-clara-suave);
+}
+
+.vacio-oscuro {
+  color: var(--tinta-clara-suave);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 2rem 1rem;
+  margin: 0;
+}
+
+.crear-mazo {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.1rem;
+}
+
+.lista-mazos,
+.lista-tarjetas {
   list-style: none;
-  margin: 1rem 0 0;
+  margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
 }
 
-.lista-conflictos li {
-  border: 1px solid var(--linea);
-  border-radius: var(--radio);
-  padding: 0.7rem 0.8rem;
-  display: flex;
-  gap: 0.8rem;
+.tarjeta-mazo {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.3rem 1rem;
   align-items: center;
-  justify-content: space-between;
+  background: var(--superficie-alta);
+  border: 1px solid var(--linea-oscura);
+  border-radius: var(--radio);
+  padding: 0.85rem 1rem;
+}
+
+.nombre-mazo {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--tinta-clara);
+  text-align: left;
+}
+
+.nombre-mazo:hover {
+  color: var(--teal);
+}
+
+.mazo-detalle {
+  margin: 0;
+  grid-column: 1;
+  font-size: 0.78rem;
+  color: var(--tinta-clara-suave);
+}
+
+.mazo-hoy {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+}
+
+.acciones-mazo,
+.acciones-fila {
+  display: flex;
+  gap: 0.4rem;
   flex-wrap: wrap;
 }
 
-.fechas-conflicto {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.76rem;
-  color: var(--tinta-suave);
-  margin-top: 0.2rem;
+.acciones-mazo {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
 }
 
-.acciones-conflicto {
+.pastilla-estudio {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 650;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  background: var(--fondo-oscuro);
+  border: 1px solid var(--linea-oscura);
+  color: var(--tinta-clara-suave);
+  white-space: nowrap;
+}
+
+.pastilla-estudio.es-pendiente {
+  color: var(--ambar);
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.pastilla-estudio.es-aldia {
+  color: var(--teal);
+  border-color: rgba(45, 212, 191, 0.35);
+  background: rgba(45, 212, 191, 0.08);
+}
+
+.pastilla-estudio.es-nueva {
+  color: #a5b4fc;
+  border-color: rgba(165, 180, 252, 0.35);
+  background: rgba(165, 180, 252, 0.1);
+}
+
+.lista-tarjetas li {
   display: flex;
-  gap: 0.4rem;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  background: var(--superficie-alta);
+  border: 1px solid var(--linea-oscura);
+  border-radius: var(--radio);
+  padding: 0.7rem 0.9rem;
+}
+
+.tarjeta-fila-textos {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.tarjeta-fila-anverso,
+.tarjeta-fila-reverso {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tarjeta-fila-anverso {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.tarjeta-fila-reverso {
+  font-size: 0.8rem;
+  color: var(--tinta-clara-suave);
+}
+
+.extracto-vacio {
+  color: #64748b;
+  font-style: italic;
+}
+
+/* ---------- Formulario de una tarjeta ---------- */
+
+.editor-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  background: var(--superficie-alta);
+  border: 1px solid var(--linea-oscura);
+  border-radius: var(--radio);
+  padding: 1rem;
+  margin-bottom: 1.1rem;
+}
+
+.campo-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.campo-tarjeta-titulo {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta-clara-suave);
+}
+
+.campo-tarjeta-caja {
+  background: var(--fondo-oscuro);
+  border: 1px solid var(--linea-oscura);
+  border-radius: var(--radio);
+  padding: 0.6rem 0.75rem;
+  min-height: 4.5rem;
+}
+
+.campo-tarjeta-caja:focus-within {
+  border-color: var(--teal);
+}
+
+.campo-cargando {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--tinta-clara-suave);
+}
+
+.acciones-editor-tarjeta {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+/* ---------- Sesión de repaso ---------- */
+
+.estudio {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.estudio-progreso {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 0.78rem;
+  color: var(--tinta-clara-suave);
+}
+
+.barra-progreso {
+  flex: 1 1 auto;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--superficie-alta);
+  overflow: hidden;
+}
+
+.barra-progreso span {
+  display: block;
+  height: 100%;
+  background: var(--teal);
+  transition: width 0.3s ease;
+}
+
+/*
+ * El volteo. La escena da la perspectiva, el elemento interior gira sobre su eje
+ * vertical y cada cara oculta su reverso. Las dos caras van en posición absoluta
+ * porque tienen que ocupar el mismo sitio.
+ */
+.tarjeta-escena {
+  perspective: 1600px;
+}
+
+.tarjeta-3d {
+  position: relative;
+  min-height: 20rem;
+  transform-style: preserve-3d;
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.tarjeta-3d.volteada {
+  transform: rotateY(180deg);
+}
+
+.cara {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 2rem 1.6rem;
+  overflow: auto;
+  background: var(--superficie-oscura);
+  border: 1px solid var(--linea-oscura);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+}
+
+.cara-dorso {
+  transform: rotateY(180deg);
+  border-color: rgba(45, 212, 191, 0.35);
+}
+
+/* La tipografía propia para el contenido de la tarjeta: es el texto protagonista. */
+.cara .texto-con-formato {
+  font-family: 'Fraunces Variable', ui-serif, Georgia, serif;
+  font-size: 1.4rem;
+  line-height: 1.4;
+  width: 100%;
+  /* La regla general lo estira al 100%; aquí debe centrarse verticalmente. */
+  height: auto;
+}
+
+.cara-vacia {
+  color: var(--tinta-clara-suave);
+  font-style: italic;
+  margin: 0;
+}
+
+/*
+ * Los marcadores llevan un degradado pensado para fondo claro, y sobre el oscuro
+ * quedarían ilegibles. Aquí se pintan como bloque de color con texto oscuro.
+ */
+.seccion-estudio mark[data-color] {
+  background-image: none;
+  color: #0b1220;
+  padding: 0 0.18em;
+  border-radius: 3px;
+}
+
+.seccion-estudio mark[data-color='amarillo'] {
+  background-color: #fcd34d;
+}
+
+.seccion-estudio mark[data-color='verde'] {
+  background-color: #6ee7b7;
+}
+
+.seccion-estudio mark[data-color='rosa'] {
+  background-color: #f9a8d4;
+}
+
+/* ---------- Los cuatro botones ---------- */
+
+.boton-estudio-principal {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--teal);
+  color: #04201c;
+  border: none;
+  border-radius: var(--radio);
+  padding: 0.75rem 1.6rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.boton-estudio-principal:hover {
+  background: #5eead4;
+}
+
+.pista-tecla {
+  font-size: 0.7rem;
+  font-weight: 600;
+  opacity: 0.7;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 0.05rem 0.3rem;
+}
+
+.botones-respuesta {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6rem;
+}
+
+/* El color codifica la dificultad, así no hay que leer para saber cuál es cuál. */
+.boton-respuesta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.7rem 0.5rem;
+  border-radius: var(--radio);
+  border: 1px solid var(--linea-oscura);
+  background: var(--superficie-alta);
+  color: var(--tinta-clara);
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.boton-respuesta:hover {
+  transform: translateY(-1px);
+}
+
+.boton-respuesta:active {
+  transform: translateY(0);
+}
+
+.respuesta-nombre {
+  font-weight: 650;
+  font-size: 0.88rem;
+}
+
+.respuesta-plazo {
+  font-size: 0.72rem;
+  color: var(--tinta-clara-suave);
+}
+
+.respuesta-tecla {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.35rem;
+  font-size: 0.62rem;
+  color: #55647a;
+}
+
+.boton-respuesta.es-otra_vez {
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+.boton-respuesta.es-otra_vez:hover {
+  background: rgba(248, 113, 113, 0.14);
+  border-color: var(--rojo-suave);
+}
+
+.boton-respuesta.es-otra_vez .respuesta-nombre {
+  color: var(--rojo-suave);
+}
+
+.boton-respuesta.es-dificil {
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+.boton-respuesta.es-dificil:hover {
+  background: rgba(251, 191, 36, 0.13);
+  border-color: var(--ambar);
+}
+
+.boton-respuesta.es-dificil .respuesta-nombre {
+  color: var(--ambar);
+}
+
+.boton-respuesta.es-bien {
+  border-color: rgba(45, 212, 191, 0.35);
+}
+
+.boton-respuesta.es-bien:hover {
+  background: rgba(45, 212, 191, 0.13);
+  border-color: var(--teal);
+}
+
+.boton-respuesta.es-bien .respuesta-nombre {
+  color: var(--teal);
+}
+
+.boton-respuesta.es-facil {
+  border-color: rgba(125, 211, 252, 0.35);
+}
+
+.boton-respuesta.es-facil:hover {
+  background: rgba(125, 211, 252, 0.13);
+  border-color: #7dd3fc;
+}
+
+.boton-respuesta.es-facil .respuesta-nombre {
+  color: #7dd3fc;
+}
+
+/* ---------- Resumen del final ---------- */
+
+.estudio-fin {
+  text-align: center;
+  padding: 3rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.estudio-fin-marca {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--teal);
+}
+
+.estudio-fin h2 {
+  margin: 0;
+  font-family: 'Fraunces Variable', ui-serif, Georgia, serif;
+  font-size: 1.6rem;
+  font-weight: 620;
+}
+
+.estudio-fin-detalle {
+  margin: 0 0 1rem;
+  color: var(--tinta-clara-suave);
+  font-size: 0.92rem;
+}
+
+@media (max-width: 40rem) {
+  .botones-respuesta {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .tarjeta-3d {
+    min-height: 16rem;
+  }
+
+  .cara .texto-con-formato {
+    font-size: 1.15rem;
+  }
+}
+
+/* Quien pide menos movimiento no debería ver la tarjeta girar. */
+@media (prefers-reduced-motion: reduce) {
+  .tarjeta-3d,
+  .barra-progreso span,
+  .boton-respuesta {
+    transition: none;
+  }
 }

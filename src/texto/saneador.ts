@@ -142,3 +142,24 @@ export function htmlEstaVacio(html: string): boolean {
   if (!html) return true
   return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() === ''
 }
+
+/**
+ * El texto de un contenido con formato, para vistas previas de una línea.
+ *
+ * Se recorre el DOM en lugar de quitar las etiquetas con una expresión regular:
+ * sustituirlas por espacios separaría del texto los signos que van pegados a una
+ * palabra en negrilla, y "¿Qué es la <strong>mitosis</strong>?" acabaría escrito
+ * como "¿Qué es la mitosis ?". Los bloques sí se unen con un espacio, para que
+ * dos párrafos seguidos no queden pegados.
+ */
+export function htmlATextoLlano(html: string): string {
+  if (!html) return ''
+
+  const cuerpo = cuerpoInerte(sanearHtml(html))
+  const texto = Array.from(cuerpo.childNodes)
+    .map((nodo) => nodo.textContent ?? '')
+    .join(' ')
+  cuerpo.innerHTML = ''
+
+  return texto.replace(/\s+/g, ' ').trim()
+}

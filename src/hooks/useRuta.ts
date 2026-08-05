@@ -7,12 +7,18 @@ import { useEffect, useState } from 'react'
  * estáticos, así que recargar /c/<id> devolvería 404 y habría que recurrir al
  * truco del 404.html. Con hash, recargar dentro de un cuaderno funciona.
  */
-export type Ruta = { tipo: 'selector' } | { tipo: 'cuaderno'; id: string }
+export type Ruta =
+  | { tipo: 'selector' }
+  | { tipo: 'cuaderno'; id: string }
+  | { tipo: 'flashcards'; id: string }
 
 function analizar(hash: string): Ruta {
   const partes = hash.replace(/^#\/?/, '').split('/').filter(Boolean)
   if (partes[0] === 'c' && partes[1]) {
-    return { tipo: 'cuaderno', id: decodeURIComponent(partes[1]) }
+    const id = decodeURIComponent(partes[1])
+    // Las flashcards cuelgan de la materia: #/c/<id>/flashcards
+    if (partes[2] === 'flashcards') return { tipo: 'flashcards', id }
+    return { tipo: 'cuaderno', id }
   }
   return { tipo: 'selector' }
 }
@@ -35,4 +41,8 @@ export function irAlSelector(): void {
 
 export function irAlCuaderno(id: string): void {
   window.location.hash = `#/c/${encodeURIComponent(id)}`
+}
+
+export function irAlasFlashcards(id: string): void {
+  window.location.hash = `#/c/${encodeURIComponent(id)}/flashcards`
 }

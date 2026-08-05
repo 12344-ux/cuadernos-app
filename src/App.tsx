@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { BarraNube } from './componentes/BarraNube'
-import { DialogoConflicto } from './componentes/DialogoConflicto'
 import { useCuadernos } from './hooks/useCuadernos'
 import { useNube } from './hooks/useNube'
 import { irAlCuaderno, irAlSelector, useRuta } from './hooks/useRuta'
 import { PantallaAcceso } from './pantallas/PantallaAcceso'
+import { PantallaFlashcards } from './pantallas/PantallaFlashcards'
 import { SelectorCuadernos } from './pantallas/SelectorCuadernos'
 import { VistaCuaderno } from './pantallas/VistaCuaderno'
 
@@ -26,10 +26,14 @@ export default function App() {
     eliminar,
     alternarArchivado,
     marcarActividad,
+    marcarActividadMazos,
     recordarUltimoCuaderno,
     recargar,
     sembrarSiVacio,
-  } = useCuadernos({ alCambiar: nube.anotarCambio })
+  } = useCuadernos({
+    alCambiar: nube.anotarCambio,
+    alCambiarMazos: nube.anotarCambioDeMazos,
+  })
 
   useEffect(() => {
     recargarRef.current = recargar
@@ -75,7 +79,9 @@ export default function App() {
   /* Recordar la materia abierta para poder retomarla desde otro dispositivo. */
   useEffect(() => {
     if (!enUso) return
-    if (ruta.tipo === 'cuaderno' && cuadernos.some((c) => c.id === ruta.id)) {
+    // También cuenta estar en las flashcards: la materia es la misma.
+    const enMateria = ruta.tipo === 'cuaderno' || ruta.tipo === 'flashcards'
+    if (enMateria && cuadernos.some((c) => c.id === ruta.id)) {
       recordarUltimoCuaderno(ruta.id)
     }
   }, [enUso, ruta, cuadernos, recordarUltimoCuaderno])
@@ -109,14 +115,7 @@ export default function App() {
     />
   )
 
-  const modalConflictos = (
-    <DialogoConflicto
-      conflictos={nube.conflictos}
-      onResolver={(id, quedarseCon) => void nube.resolverConflicto(id, quedarseCon)}
-    />
-  )
-
-  if (ruta.tipo === 'cuaderno') {
+  if (ruta.tipo === 'cuaderno' || ruta.tipo === 'flashcards') {
     const cuaderno = cuadernos.find((c) => c.id === ruta.id)
 
     // El hash puede apuntar a una materia ya eliminada o de otra cuenta.
@@ -131,29 +130,25 @@ export default function App() {
       )
     }
 
-    return (
-      <>
-        <VistaCuaderno cuaderno={cuaderno} onActividad={marcarActividad} barraNube={barra} />
-        {modalConflictos}
-      </>
-    )
+    if (ruta.tipo === 'flashcards') {
+      return <PantallaFlashcards cuaderno={cuaderno} onActividad={marcarActividadMazos} />
+    }
+
+    return <VistaCuaderno cuaderno={cuaderno} onActividad={marcarActividad} barraNube={barra} />
   }
 
   return (
-    <>
-      <SelectorCuadernos
-        cuadernos={cuadernos}
-        barraNube={barra}
-        onAbrir={irAlCuaderno}
-        onCrear={(nombre) => {
-          const cuaderno = crear(nombre)
-          irAlCuaderno(cuaderno.id)
-        }}
-        onRenombrar={renombrar}
-        onEliminar={(id) => void eliminar(id)}
-        onAlternarArchivado={alternarArchivado}
-      />
-      {modalConflictos}
-    </>
+    <SelectorCuadernos
+      cuadernos={cuadernos}
+      barraNube={barra}
+      onAbrir={irAlCuaderno}
+      onCrear={(nombre) => {
+        const cuaderno = crear(nombre)
+        irAlCuaderno(cuaderno.id)
+      }}
+      onRenombrar={renombrar}
+      onEliminar={(id) => void eliminar(id)}
+      onAlternarArchivado={alternarArchivado}
+    />
   )
 }

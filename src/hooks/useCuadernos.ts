@@ -12,10 +12,12 @@ import { VERSION_INDICE, type Cuaderno, type IndiceCuadernos } from '../tipos'
 type Opciones = {
   /** Marca la materia para subirla en la próxima sincronización. */
   alCambiar?: (idCuaderno: string) => void
+  /** Lo mismo para los mazos, que viajan en su propio archivo. */
+  alCambiarMazos?: (idCuaderno: string) => void
 }
 
 /** Estado y operaciones sobre la lista de materias. */
-export function useCuadernos({ alCambiar }: Opciones = {}) {
+export function useCuadernos({ alCambiar, alCambiarMazos }: Opciones = {}) {
   const [indice, setIndice] = useState<IndiceCuadernos>(() => leerIndice())
 
   /** Solo las que la interfaz debe mostrar: las lápidas quedan fuera. */
@@ -130,6 +132,26 @@ export function useCuadernos({ alCambiar }: Opciones = {}) {
     [aplicar, alCambiar],
   )
 
+  /**
+   * La llaman las flashcards tras guardar los mazos.
+   *
+   * Toca 'mazosModificado' y no 'modificado' a propósito: el mapa no ha cambiado,
+   * y si se marcara como modificado, repasar tarjetas provocaría bajadas o
+   * fusiones de un mapa que nadie tocó.
+   */
+  const marcarActividadMazos = useCallback(
+    (id: string, numTarjetas: number) => {
+      aplicar((previo) => ({
+        ...previo,
+        cuadernos: previo.cuadernos.map((c) =>
+          c.id === id ? { ...c, mazosModificado: Date.now(), numTarjetas } : c,
+        ),
+      }))
+      alCambiarMazos?.(id)
+    },
+    [aplicar, alCambiarMazos],
+  )
+
   /** Recuerda dónde se quedó el usuario, para retomarlo en otro dispositivo. */
   const recordarUltimoCuaderno = useCallback(
     (id: string | null) => {
@@ -151,6 +173,7 @@ export function useCuadernos({ alCambiar }: Opciones = {}) {
     eliminar,
     alternarArchivado,
     marcarActividad,
+    marcarActividadMazos,
     recordarUltimoCuaderno,
     recargar,
     sembrarSiVacio,

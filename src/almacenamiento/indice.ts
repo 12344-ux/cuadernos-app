@@ -38,6 +38,8 @@ export function normalizarIndice(datos: unknown): IndiceCuadernos {
         modificado: Number(c.modificado) || Date.now(),
         archivado: Boolean(c.archivado),
         numIdeas: Number(c.numIdeas) || 0,
+        mazosModificado: Number(c.mazosModificado) || 0,
+        numTarjetas: Number(c.numTarjetas) || 0,
         ...(c.eliminado ? { eliminado: true as const } : {}),
       }),
     ),

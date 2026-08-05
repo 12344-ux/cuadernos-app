@@ -1,12 +1,21 @@
 import { EditorContent, useEditor } from '@tiptap/react'
 import { useEffect, useRef } from 'react'
-import { EXTENSIONES_TEXTO } from '../texto/extensiones'
+import { extensionesDeTexto } from '../texto/extensiones'
 import { BarraFormatoTexto } from './BarraFormatoTexto'
 
 type PropsEditorNodo = {
   contenidoInicial: string
   onCambiar: (html: string) => void
   onTerminar: () => void
+  /**
+   * Los cuadros del lienzo entran en edición al hacer doble clic y quieren el
+   * cursor puesto. Los campos de una flashcard están siempre en modo edición, y
+   * si cada uno reclamara el foco al montarse se lo robarían entre ellos.
+   */
+  autoenfocar?: boolean
+  /** En un formulario de tarjeta, salir del campo no debe cerrar nada. */
+  cerrarAlPerderFoco?: boolean
+  placeholder?: string
 }
 
 /**
@@ -18,7 +27,14 @@ type PropsEditorNodo = {
  * por cuadro, y echaría por tierra el objetivo de sostener miles de ideas en un
  * mismo lienzo. Los cuadros en reposo se dibujan como HTML estático.
  */
-export function EditorNodo({ contenidoInicial, onCambiar, onTerminar }: PropsEditorNodo) {
+export function EditorNodo({
+  contenidoInicial,
+  onCambiar,
+  onTerminar,
+  autoenfocar = true,
+  cerrarAlPerderFoco = true,
+  placeholder = 'Escribe tu idea…',
+}: PropsEditorNodo) {
   // Espejos de las funciones: las opciones del editor se fijan al crearlo, así
   // que leerlas de una referencia evita quedarse con una versión antigua.
   const onCambiarRef = useRef(onCambiar)
@@ -30,9 +46,9 @@ export function EditorNodo({ contenidoInicial, onCambiar, onTerminar }: PropsEdi
   }, [onCambiar, onTerminar])
 
   const editor = useEditor({
-    extensions: EXTENSIONES_TEXTO,
+    extensions: extensionesDeTexto(placeholder),
     content: contenidoInicial,
-    autofocus: 'end',
+    autofocus: autoenfocar ? 'end' : false,
     editorProps: {
       attributes: {
         // 'nodrag' evita que arrastre el cuadro al seleccionar texto y 'nowheel'
@@ -53,7 +69,7 @@ export function EditorNodo({ contenidoInicial, onCambiar, onTerminar }: PropsEdi
       // ensuciar el JSON que se sube con párrafos sin contenido.
       onCambiarRef.current(instancia.isEmpty ? '' : instancia.getHTML())
     },
-    onBlur: () => onTerminarRef.current(),
+    ...(cerrarAlPerderFoco ? { onBlur: () => onTerminarRef.current() } : {}),
   })
 
   return (
