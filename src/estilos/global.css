@@ -1309,16 +1309,31 @@ button[disabled] {
   text-align: center;
   padding: 2rem 1.6rem;
   overflow: auto;
-  background: var(--superficie);
-  border: 1px solid var(--linea);
+  border: 1.5px solid;
   border-radius: 16px;
   box-shadow: var(--sombra);
 }
 
-/* El reverso se distingue del anverso por el borde en el color de acento. */
+/*
+ * Las dos caras van en colores distintos, y no es solo decoración: el color dice
+ * de un vistazo si estás mirando la pregunta o la respuesta, incluso a media
+ * animación de volteo.
+ *
+ * Son los tonos 100 y 300 de las mismas familias de las que sale toda la paleta
+ * de la app. Se usa el 100 y no el 50 de los cuadros del mapa porque una cara
+ * mide unos 320 px de alto: a ese tamaño el tono más claro se ve blanco.
+ */
+.cara-frente {
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+  color: #0c4a6e;
+}
+
 .cara-dorso {
   transform: rotateY(180deg);
-  border-color: #c7d2fe;
+  background: #ede9fe;
+  border-color: #c4b5fd;
+  color: #2e1065;
 }
 
 /* La tipografía propia para el contenido: es el texto protagonista. */
