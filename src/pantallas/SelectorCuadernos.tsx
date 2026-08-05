@@ -5,6 +5,8 @@ import type { Cuaderno } from '../tipos'
 type Props = {
   cuadernos: Cuaderno[]
   barraNube?: ReactNode
+  /** La agenda del día, que va encima de las materias. */
+  agenda?: ReactNode
   onAbrir: (id: string) => void
   onCrear: (nombre: string) => void
   onRenombrar: (id: string, nombre: string) => void
@@ -15,6 +17,7 @@ type Props = {
 export function SelectorCuadernos({
   cuadernos,
   barraNube,
+  agenda,
   onAbrir,
   onCrear,
   onRenombrar,
@@ -83,6 +86,9 @@ export function SelectorCuadernos({
         )}
       </header>
 
+      {/* Encima de las materias: al abrir la app, lo primero es qué toca hoy. */}
+      {agenda}
+
       {numArchivadas > 0 && (
         <nav className="pestanas">
           <button
@@ -101,6 +107,9 @@ export function SelectorCuadernos({
           </button>
         </nav>
       )}
+
+      {/* Con la agenda encima, las materias necesitan su propio título. */}
+      {numArchivadas === 0 && <h2 className="titulo-seccion">Materias</h2>}
 
       {visibles.length === 0 ? (
         <p className="vacio">

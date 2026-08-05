@@ -15,6 +15,7 @@ const CLAVE_PENDIENTES = 'cuadernos:pendientes'
  * significado de lo que ya hay guardado en los dispositivos y habría que migrarlo.
  */
 const CLAVE_PENDIENTES_MAZOS = 'cuadernos:pendientes-mazos'
+const CLAVE_PENDIENTE_AGENDA = 'cuadernos:pendiente-agenda'
 const CLAVE_ULTIMA_SYNC = 'cuadernos:ultima-sincronizacion'
 
 function leerJson<T>(clave: string, porDefecto: T): T {
@@ -68,6 +69,22 @@ export function limpiarPendiente(idCuaderno: string): void {
   )
 }
 
+/**
+ * La agenda es un solo archivo, así que basta un sí o un no en lugar de una
+ * lista de identificadores.
+ */
+export function hayAgendaPendiente(): boolean {
+  return localStorage.getItem(CLAVE_PENDIENTE_AGENDA) === '1'
+}
+
+export function marcarAgendaPendiente(): void {
+  localStorage.setItem(CLAVE_PENDIENTE_AGENDA, '1')
+}
+
+export function limpiarAgendaPendiente(): void {
+  localStorage.removeItem(CLAVE_PENDIENTE_AGENDA)
+}
+
 /** Materias cuyos mazos tienen cambios que aún no están en la nube. */
 export function leerMazosPendientes(): string[] {
   return leerJson<string[]>(CLAVE_PENDIENTES_MAZOS, [])
@@ -87,7 +104,7 @@ export function limpiarMazosPendiente(idCuaderno: string): void {
 }
 
 export function hayPendientes(): boolean {
-  return leerPendientes().length > 0 || leerMazosPendientes().length > 0
+  return leerPendientes().length > 0 || leerMazosPendientes().length > 0 || hayAgendaPendiente()
 }
 
 export function leerUltimaSincronizacion(): number | null {
@@ -104,5 +121,6 @@ export function borrarEstadoNube(): void {
   localStorage.removeItem(CLAVE_SHAS)
   localStorage.removeItem(CLAVE_PENDIENTES)
   localStorage.removeItem(CLAVE_PENDIENTES_MAZOS)
+  localStorage.removeItem(CLAVE_PENDIENTE_AGENDA)
   localStorage.removeItem(CLAVE_ULTIMA_SYNC)
 }

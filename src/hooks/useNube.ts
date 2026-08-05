@@ -12,7 +12,12 @@ import {
   type DondeGuardar,
 } from '../nube/credenciales'
 import { ClienteGitHub, ErrorAutenticacion } from '../nube/github'
-import { anotarCambioLocal, anotarCambioMazos, sincronizar } from '../nube/sincronizacion'
+import {
+  anotarCambioAgenda,
+  anotarCambioLocal,
+  anotarCambioMazos,
+  sincronizar,
+} from '../nube/sincronizacion'
 
 /**
  * No existe un modo "solo local" sin contraseña a propósito.
@@ -241,6 +246,13 @@ export function useNube({ alActualizarIndice }: Opciones) {
     [programarSubida],
   )
 
+  /** Y cuando lo que se ha guardado es la agenda de tareas. */
+  const anotarCambioDeAgenda = useCallback(() => {
+    anotarCambioAgenda()
+    setPendientes(true)
+    programarSubida()
+  }, [programarSubida])
+
   // Red de seguridad periódica, por si una subida falló y quedó algo pendiente.
   useEffect(() => {
     if (estadoSesion !== 'abierto') return
@@ -291,6 +303,7 @@ export function useNube({ alActualizarIndice }: Opciones) {
     cerrarSesion,
     anotarCambio,
     anotarCambioDeMazos,
+    anotarCambioDeAgenda,
     sincronizarAhora: ejecutarSincronizacion,
   }
 }

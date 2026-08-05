@@ -1,4 +1,4 @@
-import { enDias, hoy } from './fechas'
+import { enDias, hoy } from '../fechas'
 import type { Programacion, Tarjeta } from './tipos'
 
 /**

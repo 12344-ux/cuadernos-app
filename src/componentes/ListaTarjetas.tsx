@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { diaLegible } from '../tarjetas/fechas'
+import { diaLegible } from '../fechas'
 import { contar, esNueva } from '../tarjetas/sm2'
 import type { Mazo, Tarjeta } from '../tarjetas/tipos'
 import { htmlATextoLlano } from '../texto/saneador'

@@ -1520,3 +1520,183 @@ button[disabled] {
     transition: none;
   }
 }
+
+
+/* =========================================================================
+   Agenda de tareas
+   ========================================================================= */
+
+.agenda {
+  margin-bottom: 2rem;
+}
+
+.agenda-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.agenda-cabecera h2,
+.titulo-seccion {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.titulo-seccion {
+  margin-bottom: 0.9rem;
+}
+
+/* El día, en un tono suave: informa pero no compite con "Hoy". */
+.agenda-fecha {
+  font-weight: 500;
+  color: var(--tinta-suave);
+}
+
+.agenda-dia {
+  font-size: 0.9rem !important;
+  color: var(--tinta-suave);
+  text-transform: capitalize;
+}
+
+.agenda-caja {
+  background: var(--superficie);
+  border: 1px solid var(--linea);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.lista-tareas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fila-tarea {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--linea);
+}
+
+.fila-tarea:last-child {
+  border-bottom: none;
+}
+
+.marca-tarea {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.marca-tarea input {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  accent-color: var(--acento);
+  cursor: pointer;
+}
+
+.texto-tarea {
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+/* Una tarea hecha se tacha y se atenúa, pero sigue a la vista el resto del día. */
+.fila-tarea.hecha .texto-tarea {
+  text-decoration: line-through;
+  color: var(--tinta-suave);
+}
+
+.nota-tarea {
+  font-size: 0.76rem;
+  color: var(--tinta-suave);
+  white-space: nowrap;
+}
+
+/*
+ * Las acciones se revelan al acercarse a la fila, para que la lista se lea
+ * limpia. En una pantalla táctil no hay 'hover', así que ahí van siempre visibles
+ * (ver la consulta de más abajo).
+ */
+.acciones-tarea {
+  display: flex;
+  gap: 0.2rem;
+  flex: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.fila-tarea:hover .acciones-tarea,
+.fila-tarea:focus-within .acciones-tarea {
+  opacity: 1;
+}
+
+.editor-tarea {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.editor-tarea .entrada-nombre {
+  flex: 1 1 12rem;
+}
+
+.entrada-fecha {
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 0.4rem 0.5rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--tinta);
+  background: var(--superficie);
+}
+
+.entrada-fecha:focus {
+  outline: none;
+  border-color: var(--acento);
+}
+
+.agenda-pie {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.7rem;
+  border-top: 1px solid var(--linea);
+  background: #fcfdfe;
+}
+
+/* Sin tareas no hay lista, así que el pie es todo el panel y no necesita borde. */
+.agenda-caja > .agenda-pie:first-child {
+  border-top: none;
+}
+
+.agenda-vacia {
+  margin: 0 0.3rem 0 0.2rem;
+  font-size: 0.9rem;
+  color: var(--tinta-suave);
+}
+
+.fila-tarea.editando {
+  padding: 0.6rem 0.7rem;
+}
+
+/* La barra superior del historial no necesita separarse: ya hay un título debajo. */
+.barra-superior.sin-borde {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+@media (hover: none) {
+  .acciones-tarea {
+    opacity: 1;
+  }
+}

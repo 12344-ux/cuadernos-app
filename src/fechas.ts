@@ -1,14 +1,16 @@
 /**
- * Fechas de repaso como día del calendario local, en formato 'AAAA-MM-DD'.
+ * Días del calendario local, en formato 'AAAA-MM-DD'.
  *
- * No se usa una marca de tiempo a propósito. Los intervalos de SM-2 son días
- * enteros, y "toca hoy" tiene que significar el día del usuario: con una marca
- * de tiempo, una tarjeta repasada a las 23:50 volvería a vencer a las 23:50 del
- * día siguiente en lugar de estar lista por la mañana, y el comportamiento
- * cambiaría al viajar de zona horaria.
+ * Lo usan las flashcards (para el próximo repaso) y la agenda (para el día en
+ * que toca una tarea). No se usa una marca de tiempo a propósito: los dos casos
+ * hablan de días enteros, y "toca hoy" tiene que significar el día del usuario.
+ * Con una marca de tiempo, algo anotado a las 23:50 vencería a las 23:50 del día
+ * siguiente en lugar de estar listo por la mañana, y cambiaría de comportamiento
+ * al viajar de zona horaria.
  *
- * Como ventaja añadida, comparar dos días es comparar dos cadenas, y la fecha se
- * lee tal cual en el diff de GitHub.
+ * Como ventajas añadidas, comparar dos días es comparar dos cadenas, la fecha se
+ * lee tal cual en el diff de GitHub, y es exactamente el formato que devuelve un
+ * <input type="date">.
  */
 
 /** Día del calendario local de una fecha concreta. */
@@ -34,8 +36,26 @@ export function enDias(dias: number): string {
   return claveDe(fecha)
 }
 
+/** El día del calendario local al que pertenece una marca de tiempo. */
+export function diaDe(marca: number): string {
+  return claveDe(new Date(marca))
+}
+
 /** Formatea un día para mostrarlo, del estilo "6 ago". */
 const formateadorDia = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' })
+
+const formateadorCompleto = new Intl.DateTimeFormat('es', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+})
+
+/** Del estilo "miércoles, 5 de agosto", para encabezados. */
+export function diaCompletoLegible(clave: string): string {
+  const [anio, mes, dia] = clave.split('-').map(Number)
+  if (!anio || !mes || !dia) return clave
+  return formateadorCompleto.format(new Date(anio, mes - 1, dia))
+}
 
 export function diaLegible(clave: string): string {
   const [anio, mes, dia] = clave.split('-').map(Number)

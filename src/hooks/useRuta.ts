@@ -11,9 +11,12 @@ export type Ruta =
   | { tipo: 'selector' }
   | { tipo: 'cuaderno'; id: string }
   | { tipo: 'flashcards'; id: string }
+  | { tipo: 'agenda' }
 
 function analizar(hash: string): Ruta {
   const partes = hash.replace(/^#\/?/, '').split('/').filter(Boolean)
+  // El historial de la agenda no cuelga de ninguna materia.
+  if (partes[0] === 'agenda') return { tipo: 'agenda' }
   if (partes[0] === 'c' && partes[1]) {
     const id = decodeURIComponent(partes[1])
     // Las flashcards cuelgan de la materia: #/c/<id>/flashcards
@@ -45,4 +48,8 @@ export function irAlCuaderno(id: string): void {
 
 export function irAlasFlashcards(id: string): void {
   window.location.hash = `#/c/${encodeURIComponent(id)}/flashcards`
+}
+
+export function irALaAgenda(): void {
+  window.location.hash = '#/agenda'
 }
