@@ -13,6 +13,12 @@ type Props = {
   onCambiar: (fraccion: number) => void
   /** Contra qué se mide la posición del puntero. */
   contenedor: RefObject<HTMLElement | null>
+  /**
+   * Se ha terminado de ajustar. Sirve para reencuadrar los dos lienzos: cambiarles
+   * el ancho no mueve su vista, así que sin esto el contenido queda descolocado
+   * después de arrastrar.
+   */
+  onAjustado?: () => void
 }
 
 /**
@@ -23,7 +29,7 @@ type Props = {
  * eventos y dejarían el divisor pegado a medio camino. Con la captura, los
  * movimientos siguen llegando aquí hasta que se suelta.
  */
-export function DivisorArrastrable({ fraccion, onCambiar, contenedor }: Props) {
+export function DivisorArrastrable({ fraccion, onCambiar, contenedor, onAjustado }: Props) {
   const arrastrando = useRef(false)
 
   const acotar = (valor: number) => Math.min(MAXIMO, Math.max(MINIMO, valor))
@@ -59,10 +65,15 @@ export function DivisorArrastrable({ fraccion, onCambiar, contenedor }: Props) {
         if (evento.currentTarget.hasPointerCapture(evento.pointerId)) {
           evento.currentTarget.releasePointerCapture(evento.pointerId)
         }
+        // Solo si venía de un arrastre: un clic suelto no cambia el ancho y no
+        // hay nada que reencuadrar.
+        const veniaArrastrando = arrastrando.current
         arrastrando.current = false
         document.body.classList.remove('arrastrando-divisor')
+        if (veniaArrastrando) onAjustado?.()
       }}
-      // Ajustable también sin ratón.
+      // Ajustable también sin ratón. Aquí no se avisa en cada pulsación: se
+      // reencuadra al soltar la tecla, para no reencuadrar en cada flecha.
       onKeyDown={(evento) => {
         if (evento.key === 'ArrowLeft') {
           evento.preventDefault()
@@ -72,6 +83,9 @@ export function DivisorArrastrable({ fraccion, onCambiar, contenedor }: Props) {
           evento.preventDefault()
           onCambiar(acotar(fraccion + PASO))
         }
+      }}
+      onKeyUp={(evento) => {
+        if (evento.key === 'ArrowLeft' || evento.key === 'ArrowRight') onAjustado?.()
       }}
     >
       <span className="divisor-agarre" aria-hidden="true" />

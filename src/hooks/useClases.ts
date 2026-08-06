@@ -25,14 +25,26 @@ export function useClases({ idCuaderno, onActividad }: Opciones) {
     onActividadRef.current = onActividad
   }, [onActividad])
 
+  /*
+   * Espejo del índice, para poder calcular el cambio fuera del actualizador de
+   * setIndice. Se escribe siempre a la vez que el estado, y no desde un efecto,
+   * para que dos acciones seguidas en el mismo ciclo partan de la última.
+   */
+  const indiceRef = useRef<IndiceClases | null>(null)
+
+  const fijarIndice = useCallback((siguiente: IndiceClases | null) => {
+    indiceRef.current = siguiente
+    setIndice(siguiente)
+  }, [])
+
   useEffect(() => {
     let activo = true
-    setIndice(null)
+    fijarIndice(null)
     setError(null)
 
     cargarClases(idCuaderno)
       .then((cargado) => {
-        if (activo) setIndice(cargado)
+        if (activo) fijarIndice(cargado)
       })
       .catch((causa) => {
         console.error('No se pudieron cargar las clases', causa)
@@ -42,21 +54,29 @@ export function useClases({ idCuaderno, onActividad }: Opciones) {
     return () => {
       activo = false
     }
-  }, [idCuaderno])
+  }, [idCuaderno, fijarIndice])
 
+  /**
+   * Aplica un cambio a la lista, lo guarda y avisa a la nube.
+   *
+   * Guardar y avisar se hacen aquí y no dentro del actualizador de setIndice, que
+   * es donde estaban: un actualizador tiene que ser una función pura, y React lo
+   * llama dos veces a propósito en modo estricto para delatar justo esto. El
+   * efecto era una escritura doble en IndexedDB y un aviso doble a la nube en cada
+   * pulsación, es decir, el doble de commits en GitHub.
+   */
   const aplicar = useCallback(
     (cambio: (previo: IndiceClases) => IndiceClases) => {
-      setIndice((previo) => {
-        const siguiente = cambio(previo ?? indiceClasesVacio())
-        void guardarClases(idCuaderno, siguiente).catch((causa) => {
-          console.error('No se pudieron guardar las clases', causa)
-          setError('No se pudo guardar. Revisa el espacio del navegador.')
-        })
-        onActividadRef.current()
-        return siguiente
+      const siguiente = cambio(indiceRef.current ?? indiceClasesVacio())
+      fijarIndice(siguiente)
+
+      void guardarClases(idCuaderno, siguiente).catch((causa) => {
+        console.error('No se pudieron guardar las clases', causa)
+        setError('No se pudo guardar. Revisa el espacio del navegador.')
       })
+      onActividadRef.current()
     },
-    [idCuaderno],
+    [idCuaderno, fijarIndice],
   )
 
   const enClase = useCallback(

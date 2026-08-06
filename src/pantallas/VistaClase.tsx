@@ -1,5 +1,5 @@
 import { ReactFlowProvider } from '@xyflow/react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { apuntesDeClase } from '../almacenamiento/apuntes'
 import { cargarDocumento, guardarDocumento } from '../almacenamiento/documentos'
 import type { Clase } from '../clases/tipos'
@@ -14,9 +14,32 @@ const DIVISION_POR_DEFECTO = 0.34
 /** Por debajo de este ancho, dos lienzos lado a lado no sirven para nada. */
 const ANCHO_MINIMO_PARTIDA = 800
 
+/**
+ * Tamaño de una nota nueva: proporción de hoja, no de cuadro de mapa.
+ *
+ * El ancho da para una línea de texto cómoda de leer y el alto para varios
+ * párrafos, de modo que se pueda escribir seguido durante la clase sin pararse a
+ * agrandar la nota. El post-it se deja como está, que es su tamaño de siempre.
+ */
+const MEDIDA_NOTA = { texto: { ancho: 620, alto: 340 } } as const
+
 function leerDivision(): number {
   const guardada = Number(localStorage.getItem(CLAVE_DIVISION))
   return Number.isFinite(guardada) && guardada > 0 ? guardada : DIVISION_POR_DEFECTO
+}
+
+/**
+ * Dos paneles lado a lado, el de la izquierda más estrecho, que es exactamente la
+ * proporción que produce el botón. Dibujarlo ahorra tener que leer la etiqueta
+ * para entender qué hace.
+ */
+function IconoDividir() {
+  return (
+    <svg width="14" height="12" viewBox="0 0 14 12" aria-hidden="true" focusable="false">
+      <rect x="0.7" y="0.7" width="12.6" height="10.6" rx="1.6" fill="none" stroke="currentColor" strokeWidth="1.3" />
+      <line x1="5.2" y1="0.7" x2="5.2" y2="11.3" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  )
 }
 
 type Props = {
@@ -27,6 +50,8 @@ type Props = {
   onGuardarApuntes: (idClase: string, numNotas: number) => void
   /** Tras guardar el mapa desde la vista partida. */
   onActividadMapa: (idCuaderno: string, numIdeas: number) => void
+  /** Estado de la sincronización, en la barra superior. */
+  barraNube?: ReactNode
 }
 
 export function VistaClase({
@@ -35,12 +60,20 @@ export function VistaClase({
   onVolver,
   onGuardarApuntes,
   onActividadMapa,
+  barraNube,
 }: Props) {
   const [apuntes, setApuntes] = useState<DocumentoCuaderno | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const [partida, setPartida] = useState(false)
   const [fraccion, setFraccion] = useState(leerDivision)
+  /*
+   * Contador de reencuadres. Sube al partir la vista, al volver a pantalla
+   * completa y al terminar de mover el divisor: los tres cambian el ancho de los
+   * paneles, y cambiar el ancho no mueve la vista de React Flow, así que sin
+   * reencuadrar el contenido queda fuera de cuadro.
+   */
+  const [reajuste, setReajuste] = useState(0)
   /*
    * Cuál de los dos lienzos manda el teclado. React Flow escucha Supr en el
    * 'document', no en su contenedor, así que sin esto una pulsación borraría a la
@@ -109,6 +142,13 @@ export function VistaClase({
     }
   }, [])
 
+  const reencuadrar = useCallback(() => setReajuste((previo) => previo + 1), [])
+
+  const alternarPartida = useCallback(() => {
+    setPartida((previa) => !previa)
+    reencuadrar()
+  }, [reencuadrar])
+
   const guardarApuntes = useCallback(
     (documento: DocumentoCuaderno) => apuntesDeClase.guardar(clase.id, documento),
     [clase.id],
@@ -149,6 +189,7 @@ export function VistaClase({
         <h1 className="titulo-cuaderno">{clase.nombre}</h1>
         <span className="pastilla">{cuaderno.nombre}</span>
         <div className="espaciador" />
+        {barraNube}
       </header>
 
       {error ? (
@@ -175,24 +216,34 @@ export function VistaClase({
                 onGuardado={alGuardarApuntes}
                 etiqueta={`Apuntes de ${clase.nombre}`}
                 etiquetaCrear="+ Añadir nota"
-                ayuda="Doble clic en cualquier parte para escribir · selecciona texto para darle formato"
+                ayuda="Doble clic en cualquier parte para escribir · pega o arrastra imágenes dentro de una nota · Ctrl y rueda para acercar o alejar"
+                // Una nota de clase nace con tamaño de hoja, no de cuadro de
+                // mapa: aquí se escriben párrafos, listas y capturas pegadas.
+                medidasNuevas={MEDIDA_NOTA}
                 teclasActivas={!partida || panelActivo === 'notas'}
-                // Al partir y al volver, el panel cambia de ancho de golpe y la
-                // vista guardada deja las notas fuera de sitio.
-                senalDeReajuste={partida ? 1 : 0}
+                // Al partir, al volver y al mover el divisor, el panel cambia de
+                // ancho y la vista guardada deja las notas fuera de sitio.
+                senalDeReajuste={reajuste}
+                // Con la pantalla partida, este panel es tan estrecho como el del
+                // mapa y su encuadre no representa cómo se abrirá la clase la
+                // próxima vez. Mismo criterio que allí: se recuerda la vista solo
+                // cuando los apuntes ocupan la pantalla entera.
+                recordarVista={!partida}
                 accionesExtra={
                   cabePartida ? (
                     <button
                       type="button"
-                      className="boton-estudio"
+                      className={`boton-estudio boton-dividir${partida ? ' activo' : ''}`}
                       title={
                         partida
                           ? 'Ocupar toda la pantalla con los apuntes'
-                          : 'Ver los apuntes junto al mapa de la materia'
+                          : 'Dividir la pantalla: los apuntes a un lado y el mapa de la materia al otro'
                       }
-                      onClick={() => setPartida((previa) => !previa)}
+                      aria-pressed={partida}
+                      onClick={alternarPartida}
                     >
-                      {partida ? 'Solo notas' : 'Ver en mapa'}
+                      <IconoDividir />
+                      {partida ? 'Solo apuntes' : 'Dividir pantalla'}
                     </button>
                   ) : undefined
                 }
@@ -205,6 +256,7 @@ export function VistaClase({
               fraccion={fraccion}
               onCambiar={cambiarFraccion}
               contenedor={cuerpoRef}
+              onAjustado={reencuadrar}
             />
           )}
 
@@ -220,6 +272,12 @@ export function VistaClase({
                     etiqueta={`Mapa conceptual de ${cuaderno.nombre}`}
                     ayuda="Arrastra desde un borde para conectar"
                     teclasActivas={panelActivo === 'mapa'}
+                    senalDeReajuste={reajuste}
+                    // Este panel es una ventana de paso al mismo documento que se
+                    // abre a pantalla completa desde la materia: encuadra para
+                    // verlo aquí, pero no guarda este encuadre en el archivo.
+                    recordarVista={false}
+                    encuadrarAlMontar
                   />
                 </ReactFlowProvider>
               ) : (

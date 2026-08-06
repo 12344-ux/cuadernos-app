@@ -63,6 +63,43 @@ export type Tamano = keyof typeof TAMANOS
 
 export const TAMANO_POR_DEFECTO: Tamano = 'normal'
 
+/**
+ * Tamaños aplicables a un trozo de texto seleccionado, no al cuadro entero.
+ *
+ * Es una escala cerrada y con nombre en lugar de un número libre de puntos como
+ * el de un procesador de textos. Dos razones: el valor real vive en el CSS y se
+ * puede retocar sin migrar documentos, y una lista cerrada permite que el
+ * saneador valide el atributo contra claves conocidas en vez de tener que
+ * interpretar unidades y números que llegan de un archivo de GitHub.
+ */
+export const TAMANOS_TEXTO = {
+  diminuto: { nombre: 'Muy pequeño' },
+  pequeno: { nombre: 'Pequeño' },
+  normal: { nombre: 'Normal' },
+  mediano: { nombre: 'Mediano' },
+  grande: { nombre: 'Grande' },
+  enorme: { nombre: 'Enorme' },
+} as const
+
+export type TamanoTexto = keyof typeof TAMANOS_TEXTO
+
+/**
+ * Alineación de un párrafo concreto dentro del texto.
+ *
+ * Conviven con la alineación de DatosNodo, que sigue aplicándose al elemento
+ * completo: la del nodo es el valor de partida y esta la pisa allí donde se
+ * haya usado. 'justificado' solo tiene sentido párrafo a párrafo, así que no
+ * está en ALINEACIONES.
+ */
+export const ALINEACIONES_TEXTO = {
+  izquierda: { nombre: 'Alinear a la izquierda' },
+  centro: { nombre: 'Centrar' },
+  derecha: { nombre: 'Alinear a la derecha' },
+  justificado: { nombre: 'Justificar' },
+} as const
+
+export type AlineacionTexto = keyof typeof ALINEACIONES_TEXTO
+
 export const ALINEACIONES = {
   izquierda: { nombre: 'Alinear a la izquierda' },
   centro: { nombre: 'Centrar' },

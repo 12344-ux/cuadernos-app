@@ -178,6 +178,7 @@ export default function App() {
           onActividadClases={marcarActividadClases}
           onActividadApuntes={nube.anotarCambioDeApuntes}
           onActividadMapa={marcarActividad}
+          barraNube={barra}
         />
       )
     }

@@ -1,5 +1,5 @@
 import { NodeResizer, NodeToolbar, Position, useReactFlow } from '@xyflow/react'
-import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { htmlEstaVacio, sanearHtml } from '../texto/saneador'
 import { PALETA, type DatosNodo, type NodoCuaderno, type TipoElemento } from '../tipos'
 import { BarraElemento } from './BarraElemento'
@@ -43,9 +43,21 @@ export function ElementoLienzo({ id, data, selected, variante }: PropsElementoLi
    * El contenido se sanea aquí, justo antes de inyectarlo, porque este es el
    * punto donde una etiqueta inesperada podría ejecutarse. Ya se saneó al cargar
    * el documento, pero la garantía tiene que estar donde está el riesgo.
-   * Se memoriza para no repetirlo en cada render de cada cuadro visible.
+   *
+   * No se sanea mientras se edita, y no es una microoptimización: escribir dispara
+   * updateNodeData en cada tecla, así que el memo se invalidaba en cada tecla. Con
+   * una imagen pegada eso significaba parsear, recorrer y volver a serializar
+   * megabytes de base64 por pulsación, en el mismo hilo en el que se escribe, para
+   * un resultado que durante la edición no se muestra. Se conserva el último valor
+   * calculado para que el respaldo del Suspense siga teniendo algo que pintar.
    */
-  const contenidoSeguro = useMemo(() => sanearHtml(data.contenido), [data.contenido])
+  const ultimoSeguro = useRef('')
+  const contenidoSeguro = useMemo(() => {
+    if (editando) return ultimoSeguro.current
+    ultimoSeguro.current = sanearHtml(data.contenido)
+    return ultimoSeguro.current
+  }, [data.contenido, editando])
+
   const sinTexto = htmlEstaVacio(contenidoSeguro)
 
   const clases = [
@@ -113,6 +125,13 @@ export function ElementoLienzo({ id, data, selected, variante }: PropsElementoLi
               contenidoInicial={data.contenido}
               onCambiar={(html) => updateNodeData(id, { contenido: html })}
               onTerminar={() => setEditando(false)}
+              // En el lienzo sí: pegar una captura en un apunte de clase es
+              // parte del trabajo, y en el mapa sirve igual para un esquema o
+              // una fórmula. Las caras de una flashcard siguen siendo de texto.
+              admitirImagenes
+              // Solo hay un cuadro en edición a la vez, así que la barra puede
+              // quedarse a la vista sin solaparse con otra.
+              barraSiempreVisible
             />
           </Suspense>
         ) : (

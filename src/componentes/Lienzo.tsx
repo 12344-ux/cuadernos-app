@@ -37,8 +37,10 @@ import { NodoTexto as ComponenteNodoTexto } from './NodoTexto'
 /** Fuera del componente: si se recreara en cada render, React Flow remontaría todos los nodos. */
 const TIPOS_DE_NODO: NodeTypes = { texto: ComponenteNodoTexto, postit: ComponenteNodoPostit }
 
+type Medidas = { ancho: number; alto: number }
+
 /** Medidas de partida de cada tipo de elemento. */
-const MEDIDAS_NUEVAS: Record<TipoElemento, { ancho: number; alto: number }> = {
+const MEDIDAS_NUEVAS: Record<TipoElemento, Medidas> = {
   texto: { ancho: 220, alto: 90 },
   postit: { ancho: 180, alto: 150 },
 }
@@ -87,6 +89,31 @@ type PropsLienzo = {
    * la vista con la que se abrió el documento.
    */
   senalDeReajuste?: number
+  /**
+   * Si se recuerda dónde quedó la vista de este lienzo.
+   *
+   * Se apaga para el mapa de la vista partida. Ese mapa es el mismo documento
+   * que se abre a pantalla completa desde la materia, así que al mirarlo en un
+   * panel de un tercio de ancho guardaba ese encuadre estrecho en el archivo, y
+   * al volver al mapa completo aparecía con el zoom del panel. Apagado, la vista
+   * del panel es de usar y tirar y el documento conserva la suya.
+   */
+  recordarVista?: boolean
+  /**
+   * Cambia el tamaño con el que nace un elemento nuevo.
+   *
+   * Un cuadro del mapa es una idea de una línea y nace pequeño. Una nota de clase
+   * se escribe como una hoja: con encabezados, listas e imágenes dentro, y nacer
+   * del tamaño de un cuadro obligaría a agrandarla a mano antes de cada apunte.
+   */
+  medidasNuevas?: Partial<Record<TipoElemento, Medidas>>
+  /**
+   * Encuadra el contenido al montar aunque el documento traiga vista guardada.
+   *
+   * Para el mapa de la vista partida: su vista guardada se calculó a pantalla
+   * completa y en un panel estrecho deja el contenido fuera de cuadro.
+   */
+  encuadrarAlMontar?: boolean
 }
 
 /** Decide si un lote de cambios merece guardar en disco. */
@@ -111,6 +138,9 @@ export function Lienzo({
   etiquetaCrear = '+ Añadir cuadro',
   teclasActivas = true,
   senalDeReajuste,
+  recordarVista = true,
+  encuadrarAlMontar = false,
+  medidasNuevas,
 }: PropsLienzo) {
   const [nodes, setNodes, onNodesChange] = useNodesState<NodoCuaderno>(documentoInicial.nodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(documentoInicial.edges)
@@ -203,7 +233,7 @@ export function Lienzo({
           : { x: window.innerWidth / 2, y: window.innerHeight / 2 })
 
       const posicion = screenToFlowPosition(punto)
-      const { ancho, alto } = MEDIDAS_NUEVAS[tipo]
+      const { ancho, alto } = medidasNuevas?.[tipo] ?? MEDIDAS_NUEVAS[tipo]
       const nodo: NodoCuaderno = {
         id: nuevoId(),
         type: tipo,
@@ -227,7 +257,7 @@ export function Lienzo({
       setNodes((previos) => [...previos.map((n) => ({ ...n, selected: false })), nodo])
       marcarCambio()
     },
-    [screenToFlowPosition, setNodes, marcarCambio],
+    [screenToFlowPosition, setNodes, marcarCambio, medidasNuevas],
   )
 
   /**
@@ -413,11 +443,15 @@ export function Lienzo({
         // Arrancar en {0,0} dejaba los primeros cuadros debajo de la barra de
         // herramientas, que es justo donde nacen los nodos de un mapa nuevo.
         defaultViewport={documentoInicial.viewport ?? undefined}
-        fitView={!documentoInicial.viewport}
+        fitView={encuadrarAlMontar || !documentoInicial.viewport}
         fitViewOptions={{ padding: 0.3, maxZoom: 1 }}
         // Mover o hacer zoom no es editar: se recuerda la vista, pero no cuenta
-        // como cambio de la materia (ver guardarVista).
+        // como cambio de la materia (ver guardarVista). Si este lienzo no
+        // recuerda su vista, no se toca la referencia: así un cambio de contenido
+        // hecho desde aquí guarda el encuadre con el que se abrió el documento y
+        // no el de este panel.
         onMoveEnd={(_evento, viewport) => {
+          if (!recordarVista) return
           viewportRef.current = viewport
           marcarVista()
         }}
