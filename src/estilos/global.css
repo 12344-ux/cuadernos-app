@@ -1519,13 +1519,9 @@ button[disabled] {
  * En la barra superior esta fila no se parte nunca.
  *
  * El número de botones cambia con el estado de la nube: al fallar una subida
- * aparece "Usar otro token" y, con el mensaje de error ocupando lo suyo, la fila
- * se partía en dos. Como la barra superior está en el flujo, crecer una línea
- * empujaba hacia abajo la hoja o el lienzo justo mientras se escribía.
- *
- * Así que aquí manda el alto: la fila se queda en una línea y lo que cede es la
- * pastilla, que se recorta con puntos suspensivos. El mensaje completo no se
- * pierde, sigue en su 'title'.
+ * aparece "Usar otro token", y con el mensaje de error la fila se partía en dos.
+ * Como la barra superior está en el flujo, crecer una línea empujaba hacia abajo
+ * la hoja o el lienzo justo mientras se escribía.
  */
 .barra-superior .barra-nube {
   flex-wrap: nowrap;
@@ -1533,19 +1529,50 @@ button[disabled] {
   min-width: 0;
 }
 
-/* Los botones no se deforman: el que cede es el texto de la pastilla. */
-.barra-superior .barra-nube > button {
+/* Nada de esta fila se deforma: todo mide lo que mide. */
+.barra-superior .barra-nube > button,
+.barra-superior .barra-nube > .pastilla {
   flex: 0 0 auto;
 }
 
+/*
+ * En la barra superior la pastilla es solo el icono de la nube.
+ *
+ * Con texto cambiaba de ancho a cada estado, y además la etiqueta de "todo
+ * guardado" lleva la hora de la última subida, así que se estiraba y se encogía
+ * sola cada pocos minutos delante de quien está escribiendo. Eso distrae tanto
+ * como el salto de alto que ya se arregló, y por el mismo motivo: es movimiento
+ * en el borde del sitio donde tienes la vista puesta.
+ *
+ * El estado no se pierde: el icono lo dice con su forma, el color lo refuerza, el
+ * 'title' da el texto completo al pasar el ratón y el 'aria-label' lo anuncia.
+ */
+.barra-superior .pastilla-texto {
+  display: none;
+}
+
 .barra-superior .barra-nube > .pastilla {
-  flex: 0 1 auto;
-  min-width: 0;
-  /*
-   * Más corta que en el selector. Aquí comparte línea con el título de la materia
-   * y con hasta cuatro botones, y a 22rem se comía el sitio de todos.
-   */
-  max-width: 16rem;
+  /* Cuadrada y del mismo tamaño en los cuatro estados. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.45rem;
+}
+
+/* El icono se alinea con el texto cuando este sí se ve (en el selector). */
+.icono-nube {
+  flex: none;
+  display: block;
+}
+
+.pastilla-texto {
+  /* Junto al icono, sin que el texto se pegue al dibujo. */
+  margin-left: 0.35rem;
+}
+
+.pastilla:has(.pastilla-texto) {
+  display: inline-flex;
+  align-items: center;
 }
 
 /*
@@ -1577,6 +1604,7 @@ button[disabled] {
   border-radius: 999px;
   border: var(--borde) solid var(--linea);
   background: var(--superficie-tenue);
+  --pastilla-fondo: var(--superficie-tenue);
   color: var(--tinta-suave);
   white-space: nowrap;
   max-width: 22rem;
@@ -1588,24 +1616,28 @@ button[disabled] {
   color: var(--ok-tinta);
   border-color: var(--ok-borde);
   background: var(--ok-fondo);
+  --pastilla-fondo: var(--ok-fondo);
 }
 
 .pastilla-aviso {
   color: var(--aviso-tinta);
   border-color: var(--aviso-borde);
   background: var(--aviso-fondo);
+  --pastilla-fondo: var(--aviso-fondo);
 }
 
 .pastilla-trabajando {
   color: var(--info-tinta);
   border-color: var(--info-borde);
   background: var(--info-fondo);
+  --pastilla-fondo: var(--info-fondo);
 }
 
 .pastilla-error {
   color: var(--error-tinta);
   border-color: var(--error-borde);
   background: var(--error-fondo);
+  --pastilla-fondo: var(--error-fondo);
 }
 
 .boton-secundario.pequeno,
@@ -2993,7 +3025,7 @@ body.arrastrando-divisor {
 /* ---------- Señales que no dependen del color ---------- */
 
 /*
- * Cada familia semántica lleva su forma, además del tinte.
+ * El aviso de guardado del lienzo lleva su forma, además del tinte.
  *
  * Es el punto de "no fiarse solo del color": si el panel lava los tonos hasta
  * que el verde y el ámbar se parecen, la forma sigue diciendo cuál es cuál.
@@ -3005,12 +3037,10 @@ body.arrastrando-divisor {
  * máquinas viejas, apostar a que una fuente traiga dingbats es lo último que
  * conviene hacer, así que aquí no hay ninguna fuente de por medio.
  *
- * Cuatro siluetas distintas: círculo lleno, triángulo, anillo y equis.
+ * Las pastillas de la nube ya no pasan por aquí: llevan el icono de la nube, que
+ * distingue los cuatro estados por su dibujo en los dos modos, así que añadirles
+ * otra forma delante sería decir lo mismo dos veces.
  */
-[data-modo='comodo'] .pastilla-ok::before,
-[data-modo='comodo'] .pastilla-aviso::before,
-[data-modo='comodo'] .pastilla-trabajando::before,
-[data-modo='comodo'] .pastilla-error::before,
 [data-modo='comodo'] .estado-guardado.estado-guardado::before,
 [data-modo='comodo'] .estado-guardado.estado-guardando::before,
 [data-modo='comodo'] .estado-guardado.estado-error::before {
@@ -3025,26 +3055,16 @@ body.arrastrando-divisor {
 }
 
 /* Guardado: círculo lleno. */
-[data-modo='comodo'] .pastilla-ok::before,
 [data-modo='comodo'] .estado-guardado.estado-guardado::before {
   border-radius: 50%;
 }
 
 /* Pendiente: triángulo, la forma de aviso que todo el mundo reconoce. */
-[data-modo='comodo'] .pastilla-aviso::before,
 [data-modo='comodo'] .estado-guardado.estado-guardando::before {
   clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
 }
 
-/* Trabajando: anillo, que se lee como algo en curso. */
-[data-modo='comodo'] .pastilla-trabajando::before {
-  background: none;
-  border: 0.17em solid currentColor;
-  border-radius: 50%;
-}
-
 /* Error: una equis de verdad, recortada del cuadrado. */
-[data-modo='comodo'] .pastilla-error::before,
 [data-modo='comodo'] .estado-guardado.estado-error::before {
   clip-path: polygon(
     20% 0%,

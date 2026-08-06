@@ -6,7 +6,7 @@
  */
 import { StrictMode, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BarraNube } from '../src/componentes/BarraNube'
+import { BarraNube, IconoNube } from '../src/componentes/BarraNube'
 import { ProveedorModoVisual, aplicarModoAlDocumento, leerModo } from '../src/modo/visual'
 import type { EstadoNube } from '../src/hooks/useNube'
 import '@xyflow/react/dist/style.css'
@@ -54,6 +54,34 @@ function Banco() {
           </div>
         </div>
       </section>
+
+      {/* El selector sí muestra el texto: allí la fila es suya y no estorba. */}
+      <main className="selector" style={{ padding: '1rem', maxWidth: 'none' }}>
+        <div className="barra-nube">
+          {(['ok', 'pendiente', 'trabajando', 'error'] as const).map((e) => (
+            <span key={e} className={`pastilla pastilla-${e === 'pendiente' ? 'aviso' : e}`}>
+              <IconoNube estado={e} />
+              <span className="pastilla-texto">Texto de ejemplo del estado</span>
+            </span>
+          ))}
+        </div>
+      </main>
+
+      {/* Los cuatro estados juntos y ampliados, para comprobar que el dibujo se
+          distingue a tamaño real y no solo por el color. */}
+      <div style={{ padding: '1rem', display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+        {(['ok', 'pendiente', 'trabajando', 'error'] as const).map((e) => (
+          <div key={e} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'center' }}>
+            <span className={`pastilla pastilla-${e === 'pendiente' ? 'aviso' : e}`}>
+              <IconoNube estado={e} />
+            </span>
+            <span className={`pastilla pastilla-${e === 'pendiente' ? 'aviso' : e}`} style={{ zoom: 3 }}>
+              <IconoNube estado={e} />
+            </span>
+            <small>{e}</small>
+          </div>
+        ))}
+      </div>
 
       <div style={{ padding: '0.5rem 1rem', display: 'flex', gap: '0.5rem' }}>
         <button type="button" id="a-error" className="boton-secundario" onClick={() => setEstado('error')}>
