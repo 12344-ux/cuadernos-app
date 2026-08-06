@@ -31,6 +31,19 @@ function FilaClase({
   const [renombrando, setRenombrando] = useState(false)
   const [nombre, setNombre] = useState(clase.nombre)
 
+  /*
+   * El borrador se rellena al empezar a renombrar, no al montar la fila.
+   *
+   * La fila conserva su identidad ('key={clase.id}'), así que no se vuelve a
+   * montar cuando el nombre cambia por fuera: al bajar un renombrado de otro
+   * dispositivo, el borrador seguía teniendo el nombre viejo y confirmar lo
+   * reescribía encima, deshaciendo el cambio sin avisar.
+   */
+  const empezarRenombrar = () => {
+    setNombre(clase.nombre)
+    setRenombrando(true)
+  }
+
   const confirmar = () => {
     onRenombrar(nombre)
     setRenombrando(false)
@@ -60,7 +73,7 @@ function FilaClase({
           type="button"
           className="clase-enlace"
           // Doble clic para renombrar, como en la lista de páginas de un cuaderno.
-          onDoubleClick={() => setRenombrando(true)}
+          onDoubleClick={empezarRenombrar}
           onClick={onAbrir}
         >
           <span className="clase-nombre">{clase.nombre}</span>
@@ -79,7 +92,7 @@ function FilaClase({
             type="button"
             className="boton-discreto"
             title="Cambiar el nombre"
-            onClick={() => setRenombrando(true)}
+            onClick={empezarRenombrar}
           >
             Renombrar
           </button>

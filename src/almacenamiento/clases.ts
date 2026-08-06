@@ -20,13 +20,23 @@ function dia(valor: unknown): string {
   return typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(valor) ? valor : hoy()
 }
 
-function normalizarClase(datos: unknown, indice: number): Clase {
+function normalizarClase(datos: unknown, indice: number, idCuaderno: string): Clase {
   const crudo = (datos ?? {}) as Record<string, unknown>
   const ahora = Date.now()
   const creado = numero(crudo.creado, ahora)
 
   return {
-    id: typeof crudo.id === 'string' && crudo.id ? crudo.id : `clase-${indice}`,
+    /*
+     * El identificador de reserva lleva el de la materia dentro.
+     *
+     * Antes era 'clase-<indice>', el sitio que ocupaba en la lista, y los apuntes
+     * se guardan con el identificador de la clase como clave global
+     * ('apuntes/<idClase>.json'): dos entradas estropeadas en materias distintas
+     * caían las dos en 'clase-0' y acabarían compartiendo un mismo archivo de
+     * apuntes. Sigue siendo estable entre lecturas, que es lo que hace falta para
+     * no dejar los apuntes huérfanos, pero ya no puede cruzarse con otra materia.
+     */
+    id: typeof crudo.id === 'string' && crudo.id ? crudo.id : `${idCuaderno}-clase-${indice}`,
     nombre: typeof crudo.nombre === 'string' && crudo.nombre.trim() ? crudo.nombre : 'Clase',
     fecha: dia(crudo.fecha),
     creado,
@@ -39,15 +49,19 @@ function normalizarClase(datos: unknown, indice: number): Clase {
   }
 }
 
-export function normalizarIndiceClases(datos: unknown): IndiceClases {
+/** Pide la materia para poder construir identificadores de reserva únicos. */
+export function normalizarIndiceClases(datos: unknown, idCuaderno: string): IndiceClases {
   const crudo = (datos ?? {}) as Record<string, unknown>
   const clases = Array.isArray(crudo.clases) ? crudo.clases : []
-  return { version: VERSION_CLASES, clases: clases.map(normalizarClase) }
+  return {
+    version: VERSION_CLASES,
+    clases: clases.map((clase, indice) => normalizarClase(clase, indice, idCuaderno)),
+  }
 }
 
 export async function cargarClases(idCuaderno: string): Promise<IndiceClases> {
   const guardado = await idb.leer<IndiceClases>(clave(idCuaderno))
-  return guardado ? normalizarIndiceClases(guardado) : indiceClasesVacio()
+  return guardado ? normalizarIndiceClases(guardado, idCuaderno) : indiceClasesVacio()
 }
 
 export async function guardarClases(idCuaderno: string, indice: IndiceClases): Promise<void> {

@@ -173,9 +173,9 @@ export function fusionarAgendas(
   return { version: VERSION_AGENDA, tareas: [...porId.values()] }
 }
 
-function interpretarClases(contenido: string): IndiceClases | null {
+function interpretarClases(contenido: string, idCuaderno: string): IndiceClases | null {
   try {
-    return normalizarIndiceClases(JSON.parse(contenido))
+    return normalizarIndiceClases(JSON.parse(contenido), idCuaderno)
   } catch (error) {
     console.error('La lista de clases remota no se pudo interpretar', error)
     return null
@@ -559,6 +559,15 @@ async function sincronizarClases(
 
   const antes = await cargarClases(cuaderno.id)
   const notasAntes = new Map(antes.clases.map((clase) => [clase.id, clase.notasModificado]))
+  /*
+   * Las clases que ya constaban como borradas antes de fusionar. Sirve para no
+   * volver a pedir el borrado remoto de sus apuntes en cada sincronización: la
+   * lápida se queda en la lista para siempre, así que sin esto una materia con
+   * cinco clases borradas gastaría cinco peticiones inútiles cada vez.
+   */
+  const tumbasConocidas = new Set(
+    antes.clases.filter((clase) => clase.eliminada).map((clase) => clase.id),
+  )
 
   anotar(
     await sincronizarArchivo(
@@ -568,7 +577,7 @@ async function sincronizarClases(
         etiqueta: `clases de ${cuaderno.nombre}`,
         cargar: () => cargarClases(cuaderno.id),
         guardar: (indice) => guardarClases(cuaderno.id, indice),
-        interpretar: interpretarClases,
+        interpretar: (contenido) => interpretarClases(contenido, cuaderno.id),
         fusionar: fusionarIndiceClases,
         quitarPendiente: () => limpiarClasesPendiente(cuaderno.id),
       },
@@ -590,6 +599,29 @@ async function sincronizarClases(
 
   for (const clase of despues.clases) {
     if (clase.eliminada) {
+      /*
+       * Los apuntes también se borran del repositorio, no solo del dispositivo.
+       *
+       * Antes solo se borraba la copia local, así que 'apuntes/<id>.json' se
+       * quedaba en GitHub para siempre: la clase desaparecía de la interfaz pero
+       * su texto seguía siendo legible en el repositorio, y al olvidarse el sha
+       * ya no quedaba nada que lo reconciliara. Para quien borra una clase
+       * justamente porque contenía algo que no quería guardar, eso es lo
+       * contrario de lo que pidió.
+       *
+       * Solo se intenta la primera vez que vemos la lápida. Si el borrado lo hizo
+       * el otro dispositivo, el archivo ya no está y la lectura no encuentra nada:
+       * es una petición de más una sola vez, y a cambio se recupera el caso en que
+       * al otro le falló el borrado.
+       */
+      if (!tumbasConocidas.has(clase.id)) {
+        const ruta = rutaApuntes(clase.id)
+        const actual = await cliente.leerArchivo(ruta)
+        if (actual) {
+          await cliente.eliminarArchivo(ruta, actual.sha, `Eliminar apuntes de ${clase.nombre}`)
+        }
+      }
+
       await eliminarApunte(clase.id)
       olvidarSha(rutaApuntes(clase.id))
       limpiarApuntesPendiente(clase.id)
