@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, type ReactNode } from 'react'
 import { clasesVisibles } from '../clases/tipos'
 import { ListaClases } from '../componentes/ListaClases'
 import { useClases } from '../hooks/useClases'
@@ -16,6 +16,12 @@ type Props = {
   onActividadApuntes: (idClase: string) => void
   /** Cambió el mapa desde la vista partida. */
   onActividadMapa: (idCuaderno: string, numIdeas: number) => void
+  /**
+   * Estado de la sincronización. Se muestra también aquí porque una clase entera
+   * de apuntes se escribe sin salir de esta sección: sin la barra no había forma
+   * de ver si lo escrito había subido ni de forzar la subida.
+   */
+  barraNube?: ReactNode
 }
 
 /**
@@ -31,6 +37,7 @@ export function SeccionEstudioActivo({
   onActividadClases,
   onActividadApuntes,
   onActividadMapa,
+  barraNube,
 }: Props) {
   const alCambiarLista = useCallback(
     () => onActividadClases(cuaderno.id),
@@ -99,6 +106,7 @@ export function SeccionEstudioActivo({
         onVolver={() => irAlEstudioActivo(cuaderno.id)}
         onGuardarApuntes={alGuardarApuntes}
         onActividadMapa={onActividadMapa}
+        barraNube={barraNube}
       />
     )
   }
@@ -123,6 +131,8 @@ export function SeccionEstudioActivo({
           </svg>
           Mapa
         </button>
+        <div className="espaciador" />
+        {barraNube}
       </header>
 
       <div className="selector-cabecera">

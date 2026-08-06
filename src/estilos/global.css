@@ -528,6 +528,200 @@ mark[data-color='rosa'] {
   --trazo: rgba(244, 114, 182, 0.5);
 }
 
+/* ---------- Formato dentro del texto (selección, no elemento) ---------- */
+
+/*
+ * Tipografía y tamaño de un trozo de texto. En el documento solo consta la clave
+ * ('data-fuente="serif"'), igual que con los marcadores: el valor real vive aquí
+ * y se puede retocar sin migrar ningún apunte.
+ *
+ * Las familias repiten las de '.fuente-*' a propósito. Son los mismos nombres de
+ * cara al usuario, pero uno se aplica al cuadro entero por su clase y el otro a
+ * un span dentro del texto por su atributo.
+ */
+[data-fuente='sistema'] {
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+}
+
+[data-fuente='serif'] {
+  font-family: ui-serif, Georgia, 'Times New Roman', Times, serif;
+}
+
+[data-fuente='mono'] {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+}
+
+[data-fuente='fraunces'] {
+  font-family: 'Fraunces Variable', ui-serif, Georgia, serif;
+}
+
+/*
+ * En 'em' y no en 'rem': así el tamaño del trozo de texto se multiplica por el
+ * del cuadro que lo contiene en lugar de sustituirlo. Poner un cuadro en tamaño
+ * Título sigue agrandando también lo que dentro esté marcado como Grande.
+ */
+[data-tamano='diminuto'] {
+  font-size: 0.72em;
+}
+
+[data-tamano='pequeno'] {
+  font-size: 0.86em;
+}
+
+[data-tamano='normal'] {
+  font-size: 1em;
+}
+
+[data-tamano='mediano'] {
+  font-size: 1.25em;
+}
+
+[data-tamano='grande'] {
+  font-size: 1.6em;
+}
+
+[data-tamano='enorme'] {
+  font-size: 2.1em;
+}
+
+/* Alineación de un párrafo suelto, que pisa la del elemento. */
+[data-alinear='izquierda'] {
+  text-align: left;
+}
+
+[data-alinear='centro'] {
+  text-align: center;
+}
+
+[data-alinear='derecha'] {
+  text-align: right;
+}
+
+[data-alinear='justificado'] {
+  text-align: justify;
+}
+
+/* Ninguna fuente concreta: el texto usa la del cuadro. */
+.fuente-heredada {
+  font-family: inherit;
+}
+
+/* ---------- Encabezados, listas e imágenes del texto ---------- */
+
+/*
+ * Los encabezados se dimensionan en 'em' por lo mismo que los tamaños de texto:
+ * un título dentro de un cuadro pequeño debe seguir siendo proporcionado al
+ * cuadro, no salirse de él.
+ */
+.texto-con-formato :is(h1, h2, h3),
+.nodo-editor :is(h1, h2, h3) {
+  margin: 0;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.texto-con-formato :is(h1, h2, h3) + *,
+.nodo-editor :is(h1, h2, h3) + * {
+  margin-top: 0.3em;
+}
+
+.texto-con-formato * + :is(h1, h2, h3),
+.nodo-editor * + :is(h1, h2, h3) {
+  margin-top: 0.6em;
+}
+
+.texto-con-formato h1,
+.nodo-editor h1 {
+  font-size: 1.65em;
+  font-weight: 680;
+  letter-spacing: -0.01em;
+}
+
+.texto-con-formato h2,
+.nodo-editor h2 {
+  font-size: 1.3em;
+  font-weight: 660;
+}
+
+.texto-con-formato h3,
+.nodo-editor h3 {
+  font-size: 1.1em;
+  font-weight: 650;
+}
+
+.texto-con-formato :is(ul, ol),
+.nodo-editor :is(ul, ol) {
+  margin: 0;
+  /* Sitio para la viñeta sin que se salga del cuadro. */
+  padding-left: 1.15em;
+}
+
+.texto-con-formato :is(ul, ol) + *,
+.nodo-editor :is(ul, ol) + *,
+.texto-con-formato * + :is(ul, ol),
+.nodo-editor * + :is(ul, ol) {
+  margin-top: 0.32em;
+}
+
+.texto-con-formato li,
+.nodo-editor li {
+  overflow-wrap: anywhere;
+}
+
+.texto-con-formato li p,
+.nodo-editor li p {
+  margin: 0;
+}
+
+/* Listas anidadas: sin esto, una sublista dobla el espacio entre elementos. */
+.texto-con-formato li > :is(ul, ol),
+.nodo-editor li > :is(ul, ol) {
+  margin-top: 0.15em;
+}
+
+/*
+ * Una imagen pegada se ajusta al ancho del cuadro y nunca lo desborda: se pega
+ * sin pensar en el tamaño y el cuadro se redimensiona después si hace falta.
+ */
+.texto-con-formato img,
+.nodo-editor img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.35em 0;
+  border-radius: 5px;
+  /* Hasta que carga, el hueco no es un vacío sin explicación. */
+  background: rgba(15, 23, 42, 0.04);
+}
+
+/* Al seleccionarla para borrarla, se ve que está seleccionada. */
+.nodo-editor img.ProseMirror-selectednode {
+  outline: 2px solid var(--acento);
+  outline-offset: 1px;
+}
+
+/*
+ * Aviso de que una imagen no se pudo insertar. Va pegado al pie del cuadro, que
+ * es donde está mirando quien acaba de pegarla.
+ */
+.aviso-editor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-align: center;
+  color: #7f1d1d;
+  background: rgba(254, 226, 226, 0.96);
+  border-top: 1px solid #fca5a5;
+  border-radius: 0 0 var(--radio) var(--radio);
+  pointer-events: none;
+}
+
 .punto-conexion {
   width: 9px;
   height: 9px;
@@ -572,9 +766,19 @@ mark[data-color='rosa'] {
  * La barra de texto la coloca Floating UI con posición fija y colgada del body,
  * fuera del contenedor que React Flow escala al hacer zoom. Necesita un z-index
  * alto porque ya no está dentro de la pila del lienzo.
+ *
+ * A diferencia de la del elemento, esta sí se pliega en varias filas: reúne
+ * tipografía, tamaño, estilo de párrafo, énfasis, marcadores, listas, alineación
+ * e imagen, y en una sola línea no cabría en el panel estrecho de la vista
+ * partida ni en una pantalla pequeña.
  */
 .barra-texto {
   z-index: 40;
+  flex-wrap: wrap;
+  justify-content: center;
+  white-space: normal;
+  max-width: min(92vw, 33rem);
+  row-gap: 0.3rem;
 }
 
 .muestra-color {
@@ -1352,6 +1556,16 @@ button[disabled] {
   height: auto;
 }
 
+/*
+ * En una tarjeta los encabezados se contienen. La cara ya parte de un cuerpo
+ * grande, y un h1 al 1.65 se saldría de un contenedor de altura acotada. El
+ * esquema de texto es común a toda la aplicación, así que aquí se recorta la
+ * escala en vez de quitar la posibilidad de usarlos.
+ */
+.cara .texto-con-formato :is(h1, h2, h3) {
+  font-size: 1.12em;
+}
+
 .cara-vacia {
   color: var(--tinta-suave);
   font-style: italic;
@@ -1815,6 +2029,20 @@ button[disabled] {
   border-color: #c4b5fd;
 }
 
+/* El icono de los dos paneles va pegado al texto del botón. */
+.boton-dividir {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Con la pantalla ya partida, el botón se ve pulsado: vuelve a solo apuntes. */
+.boton-dividir.activo {
+  background: #ddd6fe;
+  border-color: #a78bfa;
+  color: #4c1d95;
+}
+
 /* ---------- La clase abierta y la vista partida ---------- */
 
 .vista-clase {
@@ -1839,10 +2067,23 @@ button[disabled] {
   display: grid;
 }
 
+/*
+ * 'flex: 1 1 auto' no es decorativo: es lo que da ancho al panel.
+ *
+ * En vista completa este panel es el único hijo de '.cuerpo-clase', que es una
+ * fila flex. Sin crecimiento, su ancho lo decidiría su contenido, y el contenido
+ * es React Flow, que mide 'width: 100%' y coloca todo (nodos, barras, controles)
+ * en posición absoluta: no aporta ni un píxel de ancho intrínseco. El panel
+ * colapsaba a cero y con él desaparecían los apuntes, el doble clic para
+ * escribir, el reencuadre y la propia barra de herramientas.
+ *
+ * En vista partida el ancho lo fija la rejilla, así que esto no le afecta.
+ */
 .panel-lienzo {
   position: relative;
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
 }
