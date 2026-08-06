@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
+import { ProveedorFormato } from './formato/contexto'
 /*
  * Fraunces autoalojada, no desde Google Fonts: la app se sirve desde GitHub
  * Pages y no conviene una petición a un tercero en cada carga.
@@ -21,6 +22,13 @@ if (!contenedor) throw new Error('No se encontró el elemento #root')
 
 createRoot(contenedor).render(
   <StrictMode>
-    <App />
+    {/*
+     * El proveedor envuelve toda la aplicación porque la barra de formato es una
+     * sola y vive por encima de las pantallas: lo que se está editando se anuncia
+     * al registro y la barra actúa sobre ello, esté en el mapa o en unos apuntes.
+     */}
+    <ProveedorFormato>
+      <App />
+    </ProveedorFormato>
   </StrictMode>,
 )

@@ -1,14 +1,20 @@
 import { useRef, type RefObject } from 'react'
 
-/** Límites para que ningún panel se quede inservible de estrecho. */
-const MINIMO = 0.18
-const MAXIMO = 0.7
+/**
+ * Límites para que ningún panel se quede inservible de estrecho.
+ *
+ * La fracción es la del panel izquierdo, que es el mapa. El techo deja que los
+ * apuntes se reduzcan a una franja de consulta, y el suelo evita que el mapa quede
+ * tan estrecho que no se pueda trabajar en él.
+ */
+const MINIMO = 0.3
+const MAXIMO = 0.78
 
 /** Cuánto se mueve con las flechas del teclado. */
 const PASO = 0.02
 
 type Props = {
-  /** Fracción del ancho que ocupa el panel izquierdo, entre 0 y 1. */
+  /** Fracción del ancho que ocupa el panel izquierdo (el mapa), entre 0 y 1. */
   fraccion: number
   onCambiar: (fraccion: number) => void
   /** Contra qué se mide la posición del puntero. */
@@ -39,7 +45,7 @@ export function DivisorArrastrable({ fraccion, onCambiar, contenedor, onAjustado
       className="divisor"
       role="separator"
       aria-orientation="vertical"
-      aria-label="Ajustar el ancho de los apuntes"
+      aria-label="Ajustar el reparto entre el mapa y los apuntes"
       aria-valuenow={Math.round(fraccion * 100)}
       aria-valuemin={Math.round(MINIMO * 100)}
       aria-valuemax={Math.round(MAXIMO * 100)}

@@ -1,6 +1,7 @@
 import { ReactFlowProvider } from '@xyflow/react'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { cargarDocumento, guardarDocumento } from '../almacenamiento/documentos'
+import { BarraFormato } from '../componentes/BarraFormato'
 import { Lienzo } from '../componentes/Lienzo'
 import { irAlEstudioActivo, irAlSelector, irAlasFlashcards } from '../hooks/useRuta'
 import type { Cuaderno, DocumentoCuaderno } from '../tipos'
@@ -74,6 +75,10 @@ export function VistaCuaderno({ cuaderno, barraNube, onActividad }: Props) {
         <div className="espaciador" />
         {barraNube}
       </header>
+
+      {/* Anclada aquí, y no flotando sobre el lienzo: actúa sobre el cuadro
+          seleccionado o sobre el texto que se esté escribiendo. */}
+      <BarraFormato />
 
       {error ? (
         <p className="vacio">{error}</p>

@@ -103,7 +103,7 @@ export function useClases({ idCuaderno, onActividad }: Opciones) {
         modificado: ahora,
         // Todavía no tiene apuntes, así que no hay nada que sincronizar de ellos.
         notasModificado: 0,
-        numNotas: 0,
+        palabras: 0,
       }
       aplicar((previo) => ({ ...previo, clases: [...previo.clases, clase] }))
       return clase
@@ -141,11 +141,11 @@ export function useClases({ idCuaderno, onActividad }: Opciones) {
    * 'notasModificado' y no 'modificado', porque lo que cambió es el otro archivo.
    */
   const marcarApuntes = useCallback(
-    (idClase: string, numNotas: number) => {
+    (idClase: string, palabras: number) => {
       aplicar((previo) => ({
         ...previo,
         clases: previo.clases.map((clase) =>
-          clase.id === idClase ? { ...clase, notasModificado: Date.now(), numNotas } : clase,
+          clase.id === idClase ? { ...clase, notasModificado: Date.now(), palabras } : clase,
         ),
       }))
     },
