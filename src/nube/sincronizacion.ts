@@ -24,13 +24,20 @@ import {
   recordarSha,
   registrarSincronizacion,
 } from '../almacenamiento/estadoNube'
-import { apuntesDeClase } from '../almacenamiento/apuntes'
+import {
+  cargarApunte,
+  eliminarApunte,
+  fusionarApuntes,
+  guardarApunte,
+  normalizarApunte,
+} from '../almacenamiento/apuntes'
 import {
   cargarClases,
   eliminarClases,
   guardarClases,
   normalizarIndiceClases,
 } from '../almacenamiento/clases'
+import type { Apunte } from '../apuntes/tipos'
 import { VERSION_CLASES, type Clase, type IndiceClases } from '../clases/tipos'
 import { VERSION_AGENDA, type DocumentoAgenda, type Tarea } from '../agenda/tipos'
 import { cargarAgenda, guardarAgenda, normalizarAgenda } from '../almacenamiento/agenda'
@@ -78,6 +85,19 @@ function interpretarDocumento(contenido: string): DocumentoCuaderno | null {
     return JSON.parse(contenido) as DocumentoCuaderno
   } catch (error) {
     console.error('El documento remoto no se pudo interpretar', error)
+    return null
+  }
+}
+
+/**
+ * Interpreta unos apuntes remotos. Además de proteger de un JSON roto, pasa por
+ * normalizarApunte, que es quien descarta el formato de lienzo antiguo.
+ */
+function interpretarApunte(contenido: string): Apunte | null {
+  try {
+    return normalizarApunte(JSON.parse(contenido))
+  } catch (error) {
+    console.error('Los apuntes remotos no se pudieron interpretar', error)
     return null
   }
 }
@@ -183,7 +203,7 @@ function fusionarClase(a: Clase, b: Clase): Clase {
   return {
     ...base,
     notasModificado: conApuntes.notasModificado,
-    numNotas: conApuntes.numNotas,
+    palabras: conApuntes.palabras,
   }
 }
 
@@ -570,7 +590,7 @@ async function sincronizarClases(
 
   for (const clase of despues.clases) {
     if (clase.eliminada) {
-      await apuntesDeClase.eliminar(clase.id)
+      await eliminarApunte(clase.id)
       olvidarSha(rutaApuntes(clase.id))
       limpiarApuntesPendiente(clase.id)
       continue
@@ -584,12 +604,12 @@ async function sincronizarClases(
         {
           ruta: rutaApuntes(clase.id),
           etiqueta: `apuntes de ${clase.nombre}`,
-          cargar: () => apuntesDeClase.cargar(clase.id),
-          guardar: (documento) => apuntesDeClase.guardar(clase.id, documento),
-          interpretar: interpretarDocumento,
-          // Los apuntes son un documento de lienzo, así que se combinan con la
-          // misma función que los mapas: unión de notas por identificador.
-          fusionar: fusionarDocumentos,
+          cargar: () => cargarApunte(clase.id),
+          guardar: (apunte) => guardarApunte(clase.id, apunte),
+          interpretar: interpretarApunte,
+          // Una hoja de texto continuo no se puede unir párrafo a párrafo como se
+          // unen los cuadros de un mapa: gana la escritura más reciente.
+          fusionar: fusionarApuntes,
           quitarPendiente: () => limpiarApuntesPendiente(clase.id),
         },
         {
@@ -622,7 +642,7 @@ async function borrarClasesDeMateria(
   }
 
   for (const clase of indice.clases) {
-    await apuntesDeClase.eliminar(clase.id)
+    await eliminarApunte(clase.id)
     limpiarApuntesPendiente(clase.id)
   }
   for (const ruta of rutas) olvidarSha(ruta)

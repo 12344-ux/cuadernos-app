@@ -32,7 +32,9 @@ function normalizarClase(datos: unknown, indice: number): Clase {
     creado,
     modificado: numero(crudo.modificado, creado),
     notasModificado: numero(crudo.notasModificado, 0),
-    numNotas: Math.max(0, Math.round(numero(crudo.numNotas, 0))),
+    // 'numNotas' de la versión de lienzo no se traduce: contaba cuadros, y los
+    // apuntes de esa versión se descartan (ver normalizarApunte).
+    palabras: Math.max(0, Math.round(numero(crudo.palabras, 0))),
     ...(crudo.eliminada ? { eliminada: true as const } : {}),
   }
 }

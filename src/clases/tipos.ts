@@ -19,8 +19,14 @@ export type Clase = {
    * una clase en un dispositivo haría creer al otro que sus apuntes cambiaron.
    */
   notasModificado: number
-  /** Cache para la lista, sin tener que abrir el lienzo. */
-  numNotas: number
+  /**
+   * Palabras escritas, para dar idea del avance en la lista sin abrir la hoja.
+   *
+   * Antes era 'numNotas', el número de cuadros del lienzo. Con los apuntes ya
+   * convertidos en una hoja continua ese número no significaba nada, así que el
+   * campo viejo se ignora al cargar y se cuenta lo que sí se entiende: palabras.
+   */
+  palabras: number
   /**
    * Lápida de borrado, igual que en las materias y en la agenda: si la entrada
    * se quitara sin más, al sincronizar con un dispositivo que todavía la tuviera

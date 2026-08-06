@@ -742,43 +742,75 @@ mark[data-color='rosa'] {
   transform: scale(1.25);
 }
 
-/* ---------- Barras flotantes ---------- */
+/* ---------- Barra de formato, anclada arriba ---------- */
 
 /*
- * Hay dos barras y la división es deliberada: en esta, la del elemento, va todo
- * lo que afecta al cuadro completo (color, tipografía, tamaño, alineación); en
- * '.barra-texto' solo el énfasis de lo que hay seleccionado. Juntarlas daría una
- * sola barra de más de veinte controles flotando sobre un cuadro de 220 px.
+ * Una sola barra para toda la aplicación, en un sitio fijo.
+ *
+ * Antes había dos barras flotantes: una burbuja sobre el texto seleccionado y otra
+ * pegada al cuadro seleccionado. Las dos aparecían justo encima de lo que se estaba
+ * escribiendo y tapaban los cuadros vecinos, y en pantalla partida se multiplicaban
+ * por dos. Ahora funciona como un procesador de textos: se selecciona algo y se le
+ * aplica desde arriba, sin que nada se mueva de sitio.
  */
-.barra-nodo {
+.barra-formato {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  row-gap: 0.35rem;
+  padding: 0.4rem 0.9rem;
+  background: var(--superficie);
+  border-bottom: 1px solid var(--linea);
+  /* Por encima de los lienzos, que crean su propia pila de apilamiento. */
+  z-index: 6;
+}
+
+/* Cada grupo se mantiene junto al plegarse la barra en pantallas estrechas. */
+.grupo-formato {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  white-space: nowrap;
-  background: var(--superficie);
-  border: 1px solid var(--linea);
-  border-radius: var(--radio);
-  box-shadow: var(--sombra);
-  padding: 0.3rem 0.4rem;
+}
+
+.etiqueta-grupo {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+  padding-right: 0.15rem;
 }
 
 /*
- * La barra de texto la coloca Floating UI con posición fija y colgada del body,
- * fuera del contenedor que React Flow escala al hacer zoom. Necesita un z-index
- * alto porque ya no está dentro de la pila del lienzo.
- *
- * A diferencia de la del elemento, esta sí se pliega en varias filas: reúne
- * tipografía, tamaño, estilo de párrafo, énfasis, marcadores, listas, alineación
- * e imagen, y en una sola línea no cabría en el panel estrecho de la vista
- * partida ni en una pantalla pequeña.
+ * Los controles que no aplican se apagan en lugar de esconderse: una barra que
+ * cambia de tamaño según dónde tengas el cursor es imposible de aprender, y los
+ * botones bailarían de sitio a cada clic.
  */
-.barra-texto {
-  z-index: 40;
-  flex-wrap: wrap;
-  justify-content: center;
-  white-space: normal;
-  max-width: min(92vw, 33rem);
-  row-gap: 0.3rem;
+.barra-formato button:disabled,
+.barra-formato select:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.barra-formato button:disabled:hover {
+  background: none;
+}
+
+/* Separa los ajustes del cuadro del formato del texto, que son cosas distintas. */
+.separador-fuerte {
+  width: 1px;
+  height: 1.5rem;
+  background: var(--linea);
+  margin: 0 0.25rem;
+}
+
+/* El grupo del cuadro seleccionado, para que se lea como un bloque aparte. */
+.grupo-elemento {
+  padding: 0.15rem 0.4rem;
+  border-radius: 7px;
+  background: var(--acento-suave);
 }
 
 .muestra-color {
@@ -1938,158 +1970,196 @@ button[disabled] {
 
 
 /* =========================================================================
-   Estudio Activo: apuntes por clase
+   Estudio Activo: la hoja de apuntes y las clases
    ========================================================================= */
 
-.lista-clases {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-}
-
-.fila-clase {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  flex-wrap: wrap;
-  border: 1px solid var(--linea);
-  border-radius: var(--radio);
-  padding: 0.8rem 1rem;
-  transition: border-color 0.15s;
-}
-
-.fila-clase:hover {
-  border-color: #cbd5e1;
-}
-
-.fila-clase-datos {
-  flex: 1 1 16rem;
-  min-width: 0;
-}
-
-.nombre-clase {
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  font-size: 1rem;
-  font-weight: 650;
-  color: var(--tinta);
-  text-align: left;
-}
-
-.nombre-clase:hover {
-  color: var(--acento);
-}
-
-.clase-detalle {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-  margin: 0.35rem 0 0;
-  font-size: 0.78rem;
-  color: var(--tinta-suave);
-}
-
-.acciones-clase {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.crear-clase {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.1rem;
-}
-
-.crear-clase .entrada-nombre {
-  flex: 1 1 16rem;
-}
-
-/* El botón que lleva a Estudio Activo, y el que parte la vista. */
-.boton-estudio {
-  border-radius: var(--radio);
-  border: 1px solid #ddd6fe;
-  padding: 0.5rem 0.9rem;
-  font-weight: 600;
-  font-size: 0.875rem;
-  background: #f5f3ff;
-  color: #5b21b6;
-  transition: background 0.15s, border-color 0.15s;
-}
-
-.boton-estudio:hover {
-  background: #ede9fe;
-  border-color: #c4b5fd;
-}
-
-/* El icono de los dos paneles va pegado al texto del botón. */
-.boton-dividir {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-/* Con la pantalla ya partida, el botón se ve pulsado: vuelve a solo apuntes. */
-.boton-dividir.activo {
-  background: #ddd6fe;
-  border-color: #a78bfa;
-  color: #4c1d95;
-}
-
-/* ---------- La clase abierta y la vista partida ---------- */
-
-.vista-clase {
+.vista-estudio {
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
-.cuerpo-clase {
+/*
+ * El cuerpo es una fila: las clases a la izquierda y la hoja a la derecha, las dos
+ * a la vez. En pantalla partida pasa a rejilla de tres columnas (mapa, divisor,
+ * hoja) y el ancho de la primera lo fija el estilo en línea, que es lo que mueve el
+ * divisor.
+ */
+.cuerpo-apuntes {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
+  overflow: hidden;
 }
 
-/*
- * En vista partida se pasa a rejilla de tres columnas: apuntes, divisor y mapa.
- * El ancho de la primera lo fija el estilo en línea, que es lo que mueve el
- * divisor; 'auto' deja que el divisor mida lo que mide y '1fr' da el resto al
- * mapa, que es el que interesa tener ancho.
- */
-.cuerpo-clase.partida {
+.cuerpo-apuntes.partida {
   display: grid;
 }
 
-/*
- * 'flex: 1 1 auto' no es decorativo: es lo que da ancho al panel.
- *
- * En vista completa este panel es el único hijo de '.cuerpo-clase', que es una
- * fila flex. Sin crecimiento, su ancho lo decidiría su contenido, y el contenido
- * es React Flow, que mide 'width: 100%' y coloca todo (nodos, barras, controles)
- * en posición absoluta: no aporta ni un píxel de ancho intrínseco. El panel
- * colapsaba a cero y con él desaparecían los apuntes, el doble clic para
- * escribir, el reencuadre y la propia barra de herramientas.
- *
- * En vista partida el ancho lo fija la rejilla, así que esto no le afecta.
- */
-.panel-lienzo {
+/* ---------- La columna de clases ---------- */
+
+.panel-clases {
+  flex: 0 0 15rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--superficie);
+  border-right: 1px solid var(--linea);
+  overflow-y: auto;
+}
+
+.cabecera-clases {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.7rem 0.8rem 0.5rem;
+  position: sticky;
+  top: 0;
+  background: var(--superficie);
+  z-index: 1;
+}
+
+.cabecera-clases h2 {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
+.boton-nueva-clase {
+  border: 1px solid var(--linea);
+  border-radius: 7px;
+  background: var(--superficie);
+  color: var(--acento);
+  font-size: 0.76rem;
+  font-weight: 650;
+  padding: 0.22rem 0.5rem;
+}
+
+.boton-nueva-clase:hover {
+  background: var(--acento-suave);
+  border-color: #c7d2fe;
+}
+
+.lista-clases {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.45rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.fila-clase {
+  border-radius: 8px;
+}
+
+.fila-clase:hover {
+  background: #f1f5f9;
+}
+
+/* La clase abierta se marca con una barra al canto, como una pestaña. */
+.fila-clase.activa {
+  background: var(--acento-suave);
+  box-shadow: inset 2.5px 0 0 var(--acento);
+}
+
+.clase-enlace {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0.42rem 0.55rem;
+  border-radius: 8px;
+}
+
+.clase-nombre {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--tinta);
+  /* Un nombre largo no debe ensanchar la columna. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.clase-meta {
+  font-size: 0.7rem;
+  color: var(--tinta-suave);
+}
+
+.entrada-nombre-clase {
+  width: calc(100% - 1.1rem);
+  margin: 0.3rem 0.55rem;
+  font-size: 0.84rem;
+}
+
+.acciones-clase {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  padding: 0 0.55rem 0.5rem;
+}
+
+.acciones-clase .boton-discreto {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.35rem;
+}
+
+.acciones-clase .entrada-fecha {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.25rem;
+}
+
+.crear-clase {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem 0.7rem 0.7rem;
+  border-bottom: 1px solid var(--linea);
+}
+
+.crear-clase .entrada-nombre,
+.crear-clase .entrada-fecha {
+  width: 100%;
+}
+
+.acciones-crear-clase {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.acciones-crear-clase .boton-primario {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+}
+
+.vacio-clases {
+  font-size: 0.78rem;
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+}
+
+/* ---------- Los paneles de la derecha ---------- */
+
+.panel-hoja,
+.panel-mapa {
   position: relative;
   display: flex;
   flex-direction: column;
+  /* Como en el mapa: sin crecimiento, el panel colapsaría a cero de ancho. */
   flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
-}
-
-.cuerpo-clase.partida .panel-lienzo {
-  border-top: 1px solid var(--linea);
 }
 
 .titulo-panel {
@@ -2102,7 +2172,151 @@ button[disabled] {
   color: var(--tinta-suave);
   background: var(--superficie);
   border-bottom: 1px solid var(--linea);
+  flex: 0 0 auto;
+  /* Un nombre de clase largo no debe romper el alto de la cabecera. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+
+.cuerpo-apuntes.partida .panel-hoja {
+  border-left: 1px solid var(--linea);
+}
+
+/* ---------- La hoja ---------- */
+
+/*
+ * El área de desplazamiento. La hoja crece hacia abajo y se desplaza aquí dentro,
+ * no en la ventana: así la barra de formato y la columna de clases se quedan
+ * quietas mientras se escribe.
+ */
+.hoja-apuntes {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--fondo);
+  /* Sitio al final para poder escribir cómodo sin llegar al borde inferior. */
+  padding: 1.6rem 1.2rem 45vh;
+}
+
+/*
+ * El papel. Ancho de lectura acotado a propósito: una línea de texto que cruce un
+ * monitor entero es incómoda de seguir, igual que en un procesador de textos.
+ */
+.hoja-papel {
+  position: relative;
+  max-width: 46rem;
+  margin: 0 auto;
+  background: var(--superficie);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  padding: 2.2rem 2.6rem;
+}
+
+/* La fecha de la clase, como el encabezado de una página de cuaderno. */
+.hoja-fecha {
+  margin: 0 0 1.1rem;
+  font-size: 0.8rem;
+  color: var(--tinta-suave);
+  border-bottom: 1px solid var(--linea);
+  padding-bottom: 0.5rem;
+}
+
+/*
+ * El texto de la hoja. Es más grande y más suelto que el de un cuadro del mapa: en
+ * un cuadro se lee una idea de un vistazo, aquí se leen párrafos.
+ */
+.hoja-editor {
+  outline: none;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--tinta);
+  /* Que siempre haya sitio donde pulsar para poner el cursor. */
+  min-height: 55vh;
+}
+
+.hoja-editor p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.hoja-editor p + p {
+  margin-top: 0.75em;
+}
+
+.hoja-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--tinta-suave);
+  font-style: italic;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* En la hoja hay sitio de sobra, así que los encabezados respiran de verdad. */
+.hoja-editor :is(h1, h2, h3) {
+  margin: 1.5em 0 0.45em;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.hoja-editor > :is(h1, h2, h3):first-child {
+  margin-top: 0;
+}
+
+.hoja-editor h1 {
+  font-size: 1.6em;
+  font-weight: 680;
+  letter-spacing: -0.01em;
+}
+
+.hoja-editor h2 {
+  font-size: 1.3em;
+  font-weight: 660;
+}
+
+.hoja-editor h3 {
+  font-size: 1.1em;
+  font-weight: 650;
+}
+
+.hoja-editor :is(ul, ol) {
+  margin: 0.6em 0;
+  padding-left: 1.4em;
+}
+
+.hoja-editor li {
+  overflow-wrap: anywhere;
+}
+
+.hoja-editor li p {
+  margin: 0;
+}
+
+.hoja-editor li + li {
+  margin-top: 0.2em;
+}
+
+.hoja-editor li > :is(ul, ol) {
+  margin: 0.2em 0;
+}
+
+.hoja-editor img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.9em 0;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.hoja-editor img.ProseMirror-selectednode {
+  outline: 2px solid var(--acento);
+  outline-offset: 1px;
+}
+
+/* ---------- El divisor de la pantalla partida ---------- */
 
 .divisor {
   position: relative;
@@ -2126,61 +2340,68 @@ button[disabled] {
 /* Una marca para que se vea que se puede arrastrar. */
 .divisor-agarre {
   width: 2px;
-  height: 2.2rem;
-  border-radius: 999px;
-  background: var(--superficie);
-  box-shadow: 3px 0 0 var(--superficie), -3px 0 0 var(--superficie);
+  height: 26px;
+  border-radius: 2px;
+  background: #94a3b8;
 }
 
-/*
- * Mientras se arrastra el divisor, el cursor manda en toda la página y no se
- * selecciona texto: sin esto, al pasar por encima de los apuntes se iban
- * seleccionando párrafos.
- */
+/* Mientras se arrastra, nada de seleccionar texto ni de cursores raros. */
 body.arrastrando-divisor {
   cursor: col-resize;
   user-select: none;
 }
 
-/* ---------- Ajustes de los lienzos cuando la vista está partida ---------- */
+/* ---------- Ajustes del lienzo dentro del panel partido ---------- */
 
 /*
- * El panel de la izquierda puede quedarse en poco más de 200 px, así que la barra
- * se compacta y, si aún no cabe, se desplaza en horizontal en lugar de repartirse
- * en varias filas encima de los apuntes.
+ * En un panel estrecho el minimapa se come una esquina útil, y los botones de
+ * herramientas se compactan para que quepan.
  */
-.cuerpo-clase.partida .panel-herramientas {
-  flex-wrap: nowrap;
-  max-width: calc(100% - 1rem);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.cuerpo-clase.partida .panel-herramientas::-webkit-scrollbar {
+.cuerpo-apuntes.partida .react-flow__minimap {
   display: none;
 }
 
-.cuerpo-clase.partida .panel-herramientas button {
+.cuerpo-apuntes.partida .panel-herramientas button {
   font-size: 0.78rem;
   padding: 0.35rem 0.55rem;
 }
 
+.cuerpo-apuntes.partida .panel-ayuda {
+  display: none;
+}
+
+/* En pantalla estrecha la hoja aprovecha todo el ancho y pierde el marco. */
+@media (max-width: 700px) {
+  .panel-clases {
+    flex-basis: 11rem;
+  }
+
+  .hoja-apuntes {
+    padding: 0 0 40vh;
+  }
+
+  .hoja-papel {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 1.2rem 1.1rem;
+  }
+}
+
+
 /*
- * El aviso de guardado se va abajo a la derecha: arriba choca con la barra de
- * herramientas en cuanto el panel se estrecha. Abajo queda libre, porque en
- * pantalla partida se oculta el minimapa.
+ * Aviso de que no se pudo guardar la hoja.
+ *
+ * Va encima del texto, no en su lugar: quitar el editor de la pantalla en el momento
+ * en que falla el guardado se llevaría por delante lo que aún no está en disco.
  */
-.cuerpo-clase.partida .estado-guardado {
-  top: auto;
-  bottom: 0.5rem;
-  right: 0.5rem;
-  font-size: 0.66rem;
-}
-
-.cuerpo-clase.partida .panel-ayuda {
-  display: none;
-}
-
-.cuerpo-clase.partida .react-flow__minimap {
-  display: none;
+.aviso-guardado {
+  margin: 0;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #7f1d1d;
+  background: #fee2e2;
+  border-bottom: 1px solid #fca5a5;
+  flex: 0 0 auto;
 }

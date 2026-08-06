@@ -20,6 +20,7 @@ import {
   type Viewport,
 } from '@xyflow/react'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useHayEditorActivo, useRegistrarHistorial, type Historial } from '../formato/contexto'
 import { nuevoId } from '../almacenamiento/indice'
 import {
   PALETA,
@@ -54,6 +55,27 @@ const RETARDO_AUTOGUARDADO = 700
 
 /** Más holgado que el del contenido: mover la vista no tiene ninguna urgencia. */
 const RETARDO_GUARDADO_VISTA = 1500
+
+/** Una foto del contenido del lienzo, para poder volver a ella. */
+type Instantanea = { nodes: NodoCuaderno[]; edges: Edge[] }
+
+/**
+ * Pasos de deshacer que se recuerdan.
+ *
+ * Cada paso retiene los nodos y las aristas de ese momento. Son referencias a los
+ * mismos objetos, no copias, así que el coste real es el del array; con todo, se
+ * pone un techo para que una sesión larga no acumule memoria sin límite.
+ */
+const MAXIMO_HISTORIAL = 60
+
+/**
+ * Ventana para agrupar cambios en un solo paso de deshacer.
+ *
+ * Sin ella, arrastrar un cuadro generaría un paso por cada píxel y escribir uno por
+ * cada tecla: deshacer tendría que pulsarse cien veces para volver atrás una acción
+ * que para quien la hizo fue una sola.
+ */
+const AGRUPAR_HISTORIAL = 500
 
 /**
  * El lienzo no sabe a qué pertenece lo que dibuja.
@@ -181,11 +203,149 @@ export function Lienzo({
 
   const { screenToFlowPosition, fitView, getNode } = useReactFlow<NodoCuaderno>()
 
+  /*
+   * Historial de deshacer del lienzo.
+   *
+   * React Flow no trae ninguno, así que borrar un cuadro por error no tenía vuelta
+   * atrás. Las pilas van en referencias y no en estado porque se leen y se escriben
+   * dentro de manejadores de eventos; 'selloHistorial' es lo único que existe para
+   * provocar el repintado que habilita o apaga los botones de la barra.
+   */
+  const pasadoRef = useRef<Instantanea[]>([])
+  const futuroRef = useRef<Instantanea[]>([])
+  const ultimoPasoRef = useRef(0)
+  const [selloHistorial, setSelloHistorial] = useState(0)
+
+  /** Anota el estado *anterior* al cambio que se está aplicando. */
+  const registrarPaso = useCallback(() => {
+    const ahora = Date.now()
+    /*
+     * Dentro de la ventana, el paso ya abierto absorbe el cambio.
+     *
+     * La marca NO se adelanta al absorber, y ahí estaba el error: adelantándola, la
+     * ventana no se cerraba nunca mientras siguieran llegando cambios seguidos, así
+     * que escribir un párrafo entero dentro de un cuadro quedaba en un único paso y
+     * un solo deshacer se lo llevaba todo. Midiendo desde el primer cambio del grupo,
+     * la ventana se cierra a los 500 ms y el paso siguiente abre otro.
+     */
+    if (ahora - ultimoPasoRef.current < AGRUPAR_HISTORIAL) return
+    ultimoPasoRef.current = ahora
+
+    /*
+     * nodesRef todavía apunta al estado ya pintado, porque se sincroniza en un
+     * efecto y esto corre dentro del manejador del evento. Es decir: exactamente la
+     * foto de antes del cambio, que es la que hay que guardar para poder volver.
+     */
+    pasadoRef.current = [
+      ...pasadoRef.current,
+      { nodes: nodesRef.current, edges: edgesRef.current },
+    ].slice(-MAXIMO_HISTORIAL)
+    // Cualquier cambio nuevo invalida lo que había por rehacer.
+    futuroRef.current = []
+    setSelloHistorial((sello) => sello + 1)
+  }, [])
+
   /** Marca que ha cambiado el contenido: hay que guardar y avisar a la nube. */
   const marcarCambio = useCallback(() => {
+    registrarPaso()
     contenidoSucioRef.current = true
     setVersion((previa) => previa + 1)
-  }, [])
+  }, [registrarPaso])
+
+  /** Vuelca una foto en el lienzo. No anota nada: la llaman deshacer y rehacer. */
+  const aplicarInstantanea = useCallback(
+    (instantanea: Instantanea) => {
+      nodesRef.current = instantanea.nodes
+      edgesRef.current = instantanea.edges
+      setNodes(instantanea.nodes)
+      setEdges(instantanea.edges)
+      // El siguiente cambio de verdad debe abrir un paso nuevo, no agruparse con
+      // el que acabamos de deshacer.
+      ultimoPasoRef.current = 0
+      contenidoSucioRef.current = true
+      setVersion((previa) => previa + 1)
+    },
+    [setNodes, setEdges],
+  )
+
+  const deshacer = useCallback(() => {
+    const anterior = pasadoRef.current.at(-1)
+    if (!anterior) return
+    pasadoRef.current = pasadoRef.current.slice(0, -1)
+    futuroRef.current = [
+      ...futuroRef.current,
+      { nodes: nodesRef.current, edges: edgesRef.current },
+    ]
+    aplicarInstantanea(anterior)
+    setSelloHistorial((sello) => sello + 1)
+  }, [aplicarInstantanea])
+
+  const rehacer = useCallback(() => {
+    const siguiente = futuroRef.current.at(-1)
+    if (!siguiente) return
+    futuroRef.current = futuroRef.current.slice(0, -1)
+    pasadoRef.current = [
+      ...pasadoRef.current,
+      { nodes: nodesRef.current, edges: edgesRef.current },
+    ].slice(-MAXIMO_HISTORIAL)
+    aplicarInstantanea(siguiente)
+    setSelloHistorial((sello) => sello + 1)
+  }, [aplicarInstantanea])
+
+  /*
+   * Se lee de las referencias con 'selloHistorial' como dependencia: es él quien
+   * cambia cada vez que las pilas cambian, y así los botones de la barra se
+   * habilitan y se apagan solos.
+   */
+  const historial = useMemo<Historial>(
+    () => ({
+      puedeDeshacer: pasadoRef.current.length > 0,
+      puedeRehacer: futuroRef.current.length > 0,
+      deshacer,
+      rehacer,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selloHistorial, deshacer, rehacer],
+  )
+
+  // Solo el lienzo que tiene el mando anuncia su historial: en pantalla dividida
+  // hay dos, y deshacer debe actuar sobre el panel en el que estás.
+  useRegistrarHistorial(teclasActivas ? historial : null)
+
+  /*
+   * Ctrl+Z y Ctrl+Mayús+Z para el lienzo.
+   *
+   * Con un editor de texto al mando el atajo se aparta, por el mismo criterio que usa
+   * el botón de la barra: allí manda el historial del editor, que deshace palabras y
+   * no cuadros. Se consulta el registro de formato y no el foco del documento porque
+   * mirar solo si el foco está en un 'contentEditable' dejaba un hueco: con un cuadro
+   * en edición y el foco en un desplegable de la barra, el atajo deshacía el lienzo
+   * por detrás, y la siguiente tecla del editor abierto reescribía lo restaurado
+   * haciendo desaparecer el deshacer sin rastro.
+   *
+   * También se respeta el deshacer nativo de un campo de texto normal.
+   */
+  const hayEditorActivo = useHayEditorActivo()
+
+  useEffect(() => {
+    if (!teclasActivas || hayEditorActivo) return
+
+    const alPulsar = (evento: KeyboardEvent) => {
+      if (!(evento.ctrlKey || evento.metaKey)) return
+      if (evento.key.toLowerCase() !== 'z') return
+
+      const activo = document.activeElement
+      if (activo instanceof HTMLElement && activo.isContentEditable) return
+      if (activo instanceof HTMLInputElement || activo instanceof HTMLTextAreaElement) return
+
+      evento.preventDefault()
+      if (evento.shiftKey) rehacer()
+      else deshacer()
+    }
+
+    window.addEventListener('keydown', alPulsar)
+    return () => window.removeEventListener('keydown', alPulsar)
+  }, [teclasActivas, hayEditorActivo, deshacer, rehacer])
 
   /** Marca que solo ha cambiado la vista: se guarda aquí y no se anuncia. */
   const marcarVista = useCallback(() => setVersionVista((previa) => previa + 1), [])

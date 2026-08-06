@@ -132,7 +132,8 @@ export async function prepararImagen(archivo: File): Promise<string> {
 
 
 /**
- * Tope de imágenes acumuladas en un mismo cuadro.
+ * Tope de imágenes acumuladas en un mismo documento: un cuadro del mapa o la hoja de
+ * apuntes de una clase.
  *
  * El tope por imagen no basta. El documento entero se sube a GitHub en cada
  * ráfaga de guardado, así que diez capturas de una clase serían un archivo de
@@ -143,12 +144,12 @@ export async function prepararImagen(archivo: File): Promise<string> {
  * era enterarse mucho después, cuando la subida empezara a fallar con un 422 que
  * no explica nada.
  */
-const TOPE_POR_CUADRO = 6 * 1024 * 1024
+const TOPE_POR_DOCUMENTO = 6 * 1024 * 1024
 
-export class CuadroDemasiadoPesado extends Error {
+export class DocumentoDemasiadoPesado extends Error {
   constructor() {
-    super('Este cuadro ya tiene demasiadas imágenes.')
-    this.name = 'CuadroDemasiadoPesado'
+    super('Aquí ya hay demasiadas imágenes.')
+    this.name = 'DocumentoDemasiadoPesado'
   }
 }
 
@@ -160,5 +161,5 @@ export class CuadroDemasiadoPesado extends Error {
  * que ya venían en el documento al abrirlo.
  */
 export function cabeOtraImagen(htmlActual: string, datos: string): boolean {
-  return htmlActual.length + datos.length <= TOPE_POR_CUADRO
+  return htmlActual.length + datos.length <= TOPE_POR_DOCUMENTO
 }

@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { BarraFormato } from '../componentes/BarraFormato'
 import { ListaTarjetas } from '../componentes/ListaTarjetas'
 import { SesionEstudio } from '../componentes/SesionEstudio'
 import { useMazos } from '../hooks/useMazos'
@@ -175,6 +176,10 @@ export function PantallaFlashcards({ cuaderno, onActividad }: Props) {
           <h1>{cuaderno.nombre}</h1>
         </div>
       </header>
+
+      {/* Las caras de una tarjeta usan el mismo editor que el resto, así que su
+          formato también sale de la barra de arriba. */}
+      <BarraFormato />
 
       <main className="cuerpo-estudio">
         {error && <p className="vacio">{error}</p>}

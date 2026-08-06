@@ -1,8 +1,8 @@
-import { NodeResizer, NodeToolbar, Position, useReactFlow } from '@xyflow/react'
+import { NodeResizer, useReactFlow } from '@xyflow/react'
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { useRegistrarElemento, type ElementoActivo } from '../formato/contexto'
 import { htmlEstaVacio, sanearHtml } from '../texto/saneador'
 import { PALETA, type DatosNodo, type NodoCuaderno, type TipoElemento } from '../tipos'
-import { BarraElemento } from './BarraElemento'
 import { EditorNodoDiferido } from './editorDiferido'
 
 /** Un post-it tiende a ser más cuadrado; un cuadro, más ancho que alto. */
@@ -19,9 +19,14 @@ type PropsElementoLienzo = {
 }
 
 /**
- * Cuerpo compartido por los cuadros y los post-its: barra del elemento, vista en
- * reposo y edición. Lo único que los diferencia es el aspecto y, en el caso del
- * cuadro, los puntos de conexión, que añade cada envoltorio.
+ * Cuerpo compartido por los cuadros y los post-its: vista en reposo y edición. Lo
+ * único que los diferencia es el aspecto y, en el caso del cuadro, los puntos de
+ * conexión, que añade cada envoltorio.
+ *
+ * Ya no lleva barra propia. Antes colgaba una del borde superior con el color, la
+ * tipografía y el botón de eliminar, y aparecía justo encima de los cuadros
+ * vecinos, tapando el trabajo. Ahora el cuadro seleccionado se anuncia al registro
+ * de formato y sus ajustes salen en la barra anclada arriba.
  */
 export function ElementoLienzo({ id, data, selected, variante }: PropsElementoLienzo) {
   const { updateNodeData, deleteElements } = useReactFlow<NodoCuaderno>()
@@ -40,9 +45,33 @@ export function ElementoLienzo({ id, data, selected, variante }: PropsElementoLi
   }, [data.autoenfocar, id, updateNodeData])
 
   /*
-   * El contenido se sanea aquí, justo antes de inyectarlo, porque este es el
-   * punto donde una etiqueta inesperada podría ejecutarse. Ya se saneó al cargar
-   * el documento, pero la garantía tiene que estar donde está el riesgo.
+   * Lo que la barra de arriba necesita para actuar sobre este cuadro. Solo se
+   * anuncia si está seleccionado; el resto del tiempo vale null y la barra muestra
+   * ese grupo apagado.
+   */
+  const elementoActivo = useMemo<ElementoActivo | null>(() => {
+    if (!selected) return null
+    return {
+      color: data.color,
+      fuente: data.fuente,
+      tamano: data.tamano,
+      esPostit,
+      onCambiar: (cambio) => updateNodeData(id, cambio),
+      onEliminar: () => void deleteElements({ nodes: [{ id }] }),
+    }
+    /*
+     * Las dependencias son los tres ajustes, no 'data': el contenido cambia de
+     * identidad en cada tecla, y depender de él re-registraba por pulsación, lo que
+     * provocaba un render de todo el árbol bajo el proveedor, React Flow incluido.
+     */
+  }, [selected, data.color, data.fuente, data.tamano, esPostit, id, updateNodeData, deleteElements])
+
+  useRegistrarElemento(elementoActivo)
+
+  /*
+   * El contenido se sanea aquí, justo antes de inyectarlo, porque este es el punto
+   * donde una etiqueta inesperada podría ejecutarse. Ya se saneó al cargar el
+   * documento, pero la garantía tiene que estar donde está el riesgo.
    *
    * No se sanea mientras se edita, y no es una microoptimización: escribir dispara
    * updateNodeData en cada tecla, así que el memo se invalidaba en cada tecla. Con
@@ -72,9 +101,9 @@ export function ElementoLienzo({ id, data, selected, variante }: PropsElementoLi
     .join(' ')
 
   /*
-   * Vista en reposo. Sirve además de contenido provisional mientras se descarga
-   * el editor la primera vez: al mostrar exactamente lo mismo que ya había, el
-   * cuadro no pega ningún salto.
+   * Vista en reposo. Sirve además de contenido provisional mientras se descarga el
+   * editor la primera vez: al mostrar exactamente lo mismo que ya había, el cuadro
+   * no pega ningún salto.
    */
   const vistaEnReposo = (
     <div className="nodo-contenido">
@@ -94,15 +123,6 @@ export function ElementoLienzo({ id, data, selected, variante }: PropsElementoLi
         minHeight={minimas.alto}
         color="#6366f1"
       />
-
-      <NodeToolbar isVisible={selected && !editando} position={Position.Top} offset={12}>
-        <BarraElemento
-          data={data}
-          esPostit={esPostit}
-          onCambiar={(cambio) => updateNodeData(id, cambio)}
-          onEliminar={() => void deleteElements({ nodes: [{ id }] })}
-        />
-      </NodeToolbar>
 
       <div
         className={clases}
@@ -125,13 +145,9 @@ export function ElementoLienzo({ id, data, selected, variante }: PropsElementoLi
               contenidoInicial={data.contenido}
               onCambiar={(html) => updateNodeData(id, { contenido: html })}
               onTerminar={() => setEditando(false)}
-              // En el lienzo sí: pegar una captura en un apunte de clase es
-              // parte del trabajo, y en el mapa sirve igual para un esquema o
-              // una fórmula. Las caras de una flashcard siguen siendo de texto.
+              // En el lienzo sí: pegar una captura sirve para un esquema o una
+              // fórmula. Las caras de una flashcard siguen siendo de texto.
               admitirImagenes
-              // Solo hay un cuadro en edición a la vez, así que la barra puede
-              // quedarse a la vista sin solaparse con otra.
-              barraSiempreVisible
             />
           </Suspense>
         ) : (
