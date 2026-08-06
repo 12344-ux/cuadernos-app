@@ -3,13 +3,13 @@ import { useEffect, useState } from 'react'
 import { CLASE_BARRA_FORMATO, useFormato, type Historial } from '../formato/contexto'
 import {
   ALINEACIONES_TEXTO,
+  CLAVES_COLOR,
   FUENTES,
   MARCADORES,
   PALETA,
   TAMANOS,
   TAMANOS_TEXTO,
   type AlineacionTexto,
-  type ColorId,
   type Fuente,
   type Marcador,
   type Tamano,
@@ -20,7 +20,6 @@ const CLAVES_MARCADOR = Object.keys(MARCADORES) as Marcador[]
 const CLAVES_FUENTE = Object.keys(FUENTES) as Fuente[]
 const CLAVES_TAMANO_TEXTO = Object.keys(TAMANOS_TEXTO) as TamanoTexto[]
 const CLAVES_ALINEACION = Object.keys(ALINEACIONES_TEXTO) as AlineacionTexto[]
-const CLAVES_COLOR = Object.keys(PALETA) as ColorId[]
 const CLAVES_TAMANO_NODO = Object.keys(TAMANOS) as Tamano[]
 
 const NIVELES = [1, 2, 3] as const

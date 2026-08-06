@@ -27,6 +27,7 @@ export default function App() {
     ultimoCuaderno,
     crear,
     renombrar,
+    cambiarColor,
     eliminar,
     alternarArchivado,
     marcarActividad,
@@ -200,11 +201,12 @@ export default function App() {
         />
       }
       onAbrir={irAlCuaderno}
-      onCrear={(nombre) => {
-        const cuaderno = crear(nombre)
+      onCrear={(nombre, color) => {
+        const cuaderno = crear(nombre, color)
         irAlCuaderno(cuaderno.id)
       }}
       onRenombrar={renombrar}
+      onCambiarColor={cambiarColor}
       onEliminar={(id) => void eliminar(id)}
       onAlternarArchivado={alternarArchivado}
     />

@@ -1,10 +1,10 @@
 import { ReactFlowProvider } from '@xyflow/react'
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { cargarDocumento, guardarDocumento } from '../almacenamiento/documentos'
 import { BarraFormato } from '../componentes/BarraFormato'
 import { Lienzo } from '../componentes/Lienzo'
 import { irAlEstudioActivo, irAlSelector, irAlasFlashcards } from '../hooks/useRuta'
-import type { Cuaderno, DocumentoCuaderno } from '../tipos'
+import { colorDeMateria, type Cuaderno, type DocumentoCuaderno } from '../tipos'
 
 type Props = {
   cuaderno: Cuaderno
@@ -71,7 +71,17 @@ export function VistaCuaderno({ cuaderno, barraNube, onActividad }: Props) {
           </svg>
           Cuadernos
         </button>
-        <h1 className="titulo-cuaderno">{cuaderno.nombre}</h1>
+        {/*
+          El nombre lleva el color de la materia: es el único rastro del color
+          dentro de la vista, y basta para saber dónde estás sin leer. Con el
+          neutro (una materia sin color) queda en la tinta de siempre.
+        */}
+        <h1
+          className="titulo-cuaderno"
+          style={{ '--materia-texto': colorDeMateria(cuaderno).texto } as CSSProperties}
+        >
+          {cuaderno.nombre}
+        </h1>
         <div className="espaciador" />
         {barraNube}
       </header>
