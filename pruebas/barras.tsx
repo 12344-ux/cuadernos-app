@@ -26,7 +26,9 @@ function Banco() {
         </button>
         <h1 className="titulo-cuaderno">Contabilidad</h1>
         <div className="espaciador" />
+        {/* Como en una materia: sin la recuperación de credenciales. */}
         <BarraNube
+          enInicio={false}
           estadoSesion="abierto"
           estadoNube={estado}
           mensaje={estado === 'error' ? LARGO : null}
@@ -55,16 +57,20 @@ function Banco() {
         </div>
       </section>
 
-      {/* El selector sí muestra el texto: allí la fila es suya y no estorba. */}
+      {/* La barra del selector: con texto y con la recuperación de credenciales. */}
       <main className="selector" style={{ padding: '1rem', maxWidth: 'none' }}>
-        <div className="barra-nube">
-          {(['ok', 'pendiente', 'trabajando', 'error'] as const).map((e) => (
-            <span key={e} className={`pastilla pastilla-${e === 'pendiente' ? 'aviso' : e}`}>
-              <IconoNube estado={e} />
-              <span className="pastilla-texto">Texto de ejemplo del estado</span>
-            </span>
-          ))}
-        </div>
+        <BarraNube
+          enInicio
+          estadoSesion="abierto"
+          estadoNube={estado}
+          mensaje={estado === 'error' ? LARGO : null}
+          pendientes={estado === 'error'}
+          ultimaSync={Date.now()}
+          donde="sesion"
+          onSincronizar={() => {}}
+          onCerrarSesion={() => {}}
+          onUsarOtroToken={() => {}}
+        />
       </main>
 
       {/* Los cuatro estados juntos y ampliados, para comprobar que el dibujo se

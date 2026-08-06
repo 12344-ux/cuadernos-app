@@ -82,6 +82,15 @@ export function IconoNube({ estado }: { estado: EstadoIcono }) {
 }
 
 type Props = {
+  /**
+   * Si esta barra es la del selector de materias.
+   *
+   * Allí hay una fila entera para ella, así que muestra el texto del estado y la
+   * recuperación de credenciales. En la barra superior de una materia va compacta
+   * y con un juego de botones fijo, para que nada aparezca ni cambie de sitio
+   * mientras se escribe.
+   */
+  enInicio?: boolean
   estadoSesion: EstadoSesion
   estadoNube: EstadoNube
   mensaje: string | null
@@ -94,6 +103,7 @@ type Props = {
 }
 
 export function BarraNube({
+  enInicio = false,
   estadoSesion,
   estadoNube,
   mensaje,
@@ -173,8 +183,19 @@ export function BarraNube({
         Comprobar ahora
       </button>
 
-      {/* Salida cuando el token caduca o se revoca, sin perder los apuntes locales. */}
-      {estadoNube === 'error' && (
+      {/*
+        Salida cuando el token caduca o se revoca, sin perder los apuntes locales.
+    
+        Solo en el selector de materias. Es el único botón de esta barra que
+        aparece y desaparece según el estado, y en la barra superior de una materia
+        eso es un cambio en el borde de donde tienes la vista mientras escribes.
+        Dejándolo aquí, la barra de las pantallas de trabajo tiene siempre los
+        mismos botones y nada se mueve.
+
+        No se pierde el acceso: el icono de la nube sigue avisando del fallo en
+        todas las pantallas, y volver a Cuadernos es un clic.
+      */}
+      {enInicio && estadoNube === 'error' && (
         <button type="button" className="boton-secundario pequeno" onClick={onUsarOtroToken}>
           Usar otro token
         </button>
