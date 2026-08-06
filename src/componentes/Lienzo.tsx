@@ -630,7 +630,9 @@ export function Lienzo({
         proOptions={{ hideAttribution: true }}
         aria-label={etiqueta}
       >
-        <Background variant={BackgroundVariant.Dots} gap={22} size={1.4} color="#d5d9e2" />
+        {/* La retícula, en el mismo gris cálido que los bordes de la app: en gris
+            azulado se veía como una trama fría sobre el fondo crema. */}
+        <Background variant={BackgroundVariant.Dots} gap={22} size={1.4} color="#d6d1c4" />
         <Controls showInteractive={false} />
         <MiniMap
           pannable

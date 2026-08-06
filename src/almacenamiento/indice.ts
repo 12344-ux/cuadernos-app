@@ -1,4 +1,4 @@
-import { VERSION_INDICE, type Cuaderno, type IndiceCuadernos } from '../tipos'
+import { PALETA, VERSION_INDICE, type ColorId, type Cuaderno, type IndiceCuadernos } from '../tipos'
 
 /**
  * Índice de materias. Vive en localStorage porque son unos pocos KB y conviene
@@ -12,6 +12,17 @@ const INDICE_VACIO: IndiceCuadernos = {
   cuadernos: [],
   ultimoCuaderno: null,
   actualizado: 0,
+}
+
+/**
+ * Valida el color de una materia contra las claves de la paleta.
+ *
+ * Un índice puede venir de un archivo de GitHub escrito por otra versión de la
+ * app, así que la clave se comprueba en lugar de confiar en ella: si no se
+ * reconoce, la materia se queda sin color y se pinta con el neutro.
+ */
+function colorValido(valor: unknown): ColorId | undefined {
+  return typeof valor === 'string' && valor in PALETA ? (valor as ColorId) : undefined
 }
 
 /** Normaliza un índice venido de localStorage o de la nube. */
@@ -38,6 +49,9 @@ export function normalizarIndice(datos: unknown): IndiceCuadernos {
         modificado: Number(c.modificado) || Date.now(),
         archivado: Boolean(c.archivado),
         numIdeas: Number(c.numIdeas) || 0,
+        // Solo se incluye si es válido: así una materia sin color no acarrea la
+        // clave con 'undefined' hasta el JSON que se sube a la nube.
+        ...(colorValido(c.color) ? { color: colorValido(c.color) } : {}),
         mazosModificado: Number(c.mazosModificado) || 0,
         numTarjetas: Number(c.numTarjetas) || 0,
         clasesModificado: Number(c.clasesModificado) || 0,

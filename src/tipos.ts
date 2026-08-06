@@ -7,18 +7,45 @@ import type { Edge, Node, Viewport } from '@xyflow/react'
 export const PALETA = {
   // 'mini' es un tono medio para el minimapa: el color de borde es demasiado
   // claro y a tamaño reducido los cuadros se veían lavados.
-  pizarra: { nombre: 'Pizarra', borde: '#cbd5e1', fondo: '#f8fafc', texto: '#0f172a', mini: '#94a3b8' },
-  amarillo: { nombre: 'Amarillo', borde: '#fcd34d', fondo: '#fffbeb', texto: '#4a2c05', mini: '#f59e0b' },
-  verde: { nombre: 'Verde', borde: '#86efac', fondo: '#f0fdf4', texto: '#052e16', mini: '#22c55e' },
-  azul: { nombre: 'Azul', borde: '#93c5fd', fondo: '#eff6ff', texto: '#0b2a54', mini: '#3b82f6' },
-  violeta: { nombre: 'Violeta', borde: '#c4b5fd', fondo: '#f5f3ff', texto: '#2e1065', mini: '#8b5cf6' },
-  rosa: { nombre: 'Rosa', borde: '#f9a8d4', fondo: '#fdf2f8', texto: '#500724', mini: '#ec4899' },
-  naranja: { nombre: 'Naranja', borde: '#fdba74', fondo: '#fff7ed', texto: '#431407', mini: '#f97316' },
+  //
+  // 'acento' es otro tono medio, pero apagado, y sirve para las líneas de color
+  // de la interfaz: el borde superior de la tarjeta de una materia. No se
+  // reutiliza 'mini' porque a tamaño de minimapa hace falta saturación, y esa
+  // misma saturación en un borde de 3 px sobre el fondo crema grita demasiado.
+  //
+  // Amarillo y naranja conservan sus valores originales a propósito: ya son
+  // cálidos, y el amarillo es el color de los post-its. El resto de familias
+  // eran blancos azulados (los '50' de Tailwind) que sobre el crema se veían
+  // como parches fríos, así que se han reequilibrado hacia la misma temperatura.
+  pizarra: { nombre: 'Pizarra', borde: '#d8d3c7', fondo: '#fbfaf6', texto: '#2c2c2a', mini: '#94a3b8', acento: '#a29b8d' },
+  amarillo: { nombre: 'Amarillo', borde: '#fcd34d', fondo: '#fffbeb', texto: '#4a2c05', mini: '#f59e0b', acento: '#d9a03c' },
+  verde: { nombre: 'Verde', borde: '#bfd8b0', fondo: '#f0f5e9', texto: '#052e16', mini: '#22c55e', acento: '#7fa05c' },
+  azul: { nombre: 'Azul', borde: '#b4cbdd', fondo: '#ebf2f7', texto: '#0b2a54', mini: '#3b82f6', acento: '#5b8cae' },
+  violeta: { nombre: 'Violeta', borde: '#cbc2df', fondo: '#f3f0f8', texto: '#2e1065', mini: '#8b5cf6', acento: '#8a79b8' },
+  rosa: { nombre: 'Rosa', borde: '#ebbfcb', fondo: '#fbecf0', texto: '#500724', mini: '#ec4899', acento: '#c86b89' },
+  naranja: { nombre: 'Naranja', borde: '#fdba74', fondo: '#fff7ed', texto: '#431407', mini: '#f97316', acento: '#d9814a' },
 } as const
 
 export type ColorId = keyof typeof PALETA
 
 export const COLOR_POR_DEFECTO: ColorId = 'pizarra'
+
+/** Las claves de la paleta, en el orden en que se ofrecen al elegir un color. */
+export const CLAVES_COLOR = Object.keys(PALETA) as ColorId[]
+
+/**
+ * Color de una materia que todavía no tiene ninguno asignado.
+ *
+ * 'pizarra' es el neutro cálido, así que una materia creada antes de que
+ * existiera este campo se sigue viendo como una tarjeta clara sin tinte: al
+ * actualizar no cambia nada de sitio ni hay que elegir nada para seguir.
+ */
+export const COLOR_MATERIA_POR_DEFECTO: ColorId = 'pizarra'
+
+/** El color de una materia, tolerando las que aún no lo tienen. */
+export function colorDeMateria(cuaderno: Pick<Cuaderno, 'color'>) {
+  return PALETA[cuaderno.color ?? COLOR_MATERIA_POR_DEFECTO]
+}
 
 /**
  * Marcadores de texto, al estilo de un subrayador. Son tres y no siete a
@@ -172,6 +199,16 @@ export type Cuaderno = {
   creado: number
   modificado: number
   archivado: boolean
+  /**
+   * Color de la materia, de la misma paleta que los cuadros del lienzo. Tiñe su
+   * tarjeta en el selector y su nombre en la barra superior.
+   *
+   * Es opcional porque las materias creadas antes de que existiera este campo no
+   * lo tienen; quien lo lea debe pasar por colorDeMateria(), que cae en el
+   * neutro. Se guarda la clave y no el color, como en los cuadros, para poder
+   * retocar la paleta sin migrar ningún índice.
+   */
+  color?: ColorId
   /** Cache para mostrar en la tarjeta sin abrir el documento. */
   numIdeas: number
   /**

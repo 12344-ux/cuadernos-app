@@ -7,7 +7,7 @@ import {
   nuevoId,
 } from '../almacenamiento/indice'
 import { aplicarSemillaSiHaceFalta } from '../almacenamiento/semilla'
-import { VERSION_INDICE, type Cuaderno, type IndiceCuadernos } from '../tipos'
+import { VERSION_INDICE, type ColorId, type Cuaderno, type IndiceCuadernos } from '../tipos'
 
 type Opciones = {
   /** Marca la materia para subirla en la próxima sincronización. */
@@ -58,7 +58,7 @@ export function useCuadernos({
   }, [recargar])
 
   const crear = useCallback(
-    (nombre: string): Cuaderno => {
+    (nombre: string, color?: ColorId): Cuaderno => {
       const ahora = Date.now()
       const cuaderno: Cuaderno = {
         id: nuevoId(),
@@ -67,10 +67,30 @@ export function useCuadernos({
         modificado: ahora,
         archivado: false,
         numIdeas: 0,
+        ...(color ? { color } : {}),
       }
       aplicar((previo) => ({ ...previo, cuadernos: [cuaderno, ...previo.cuadernos] }))
       alCambiar?.(cuaderno.id)
       return cuaderno
+    },
+    [aplicar, alCambiar],
+  )
+
+  /**
+   * Cambia el color de una materia.
+   *
+   * Toca 'modificado' como el renombrado: el color es un metadato del índice, y
+   * sin actualizar la fecha la fusión con otro dispositivo lo descartaría.
+   */
+  const cambiarColor = useCallback(
+    (id: string, color: ColorId) => {
+      aplicar((previo) => ({
+        ...previo,
+        cuadernos: previo.cuadernos.map((c) =>
+          c.id === id ? { ...c, color, modificado: Date.now() } : c,
+        ),
+      }))
+      alCambiar?.(id)
     },
     [aplicar, alCambiar],
   )
@@ -209,6 +229,7 @@ export function useCuadernos({
     ultimoCuaderno: indice.ultimoCuaderno ?? null,
     crear,
     renombrar,
+    cambiarColor,
     eliminar,
     alternarArchivado,
     marcarActividad,

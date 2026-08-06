@@ -111,12 +111,15 @@ export async function aplicarSemillaSiHaceFalta(): Promise<Cuaderno[] | null> {
   const ahora = Date.now()
   const demo = documentoDemo()
 
+  // Las dos de ejemplo van con color: es la forma de que se vea para qué sirve
+  // el campo sin tener que crear una materia y elegírselo.
   const biologia: Cuaderno = {
     id: nuevoId(),
     nombre: 'Biología',
     creado: ahora,
     modificado: ahora,
     archivado: false,
+    color: 'verde',
     // Coherente con el contador del lienzo: los post-its no son ideas.
     numIdeas: demo.nodes.filter((nodo) => nodo.type === 'texto').length,
   }
@@ -126,6 +129,7 @@ export async function aplicarSemillaSiHaceFalta(): Promise<Cuaderno[] | null> {
     creado: ahora,
     modificado: ahora,
     archivado: false,
+    color: 'azul',
     numIdeas: 0,
   }
 

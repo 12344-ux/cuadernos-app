@@ -1,6 +1,12 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { TarjetaCuaderno } from '../componentes/TarjetaCuaderno'
-import type { Cuaderno } from '../tipos'
+import {
+  CLAVES_COLOR,
+  COLOR_MATERIA_POR_DEFECTO,
+  PALETA,
+  type ColorId,
+  type Cuaderno,
+} from '../tipos'
 
 type Props = {
   cuadernos: Cuaderno[]
@@ -8,8 +14,9 @@ type Props = {
   /** La agenda del día, que va encima de las materias. */
   agenda?: ReactNode
   onAbrir: (id: string) => void
-  onCrear: (nombre: string) => void
+  onCrear: (nombre: string, color: ColorId) => void
   onRenombrar: (id: string, nombre: string) => void
+  onCambiarColor: (id: string, color: ColorId) => void
   onEliminar: (id: string) => void
   onAlternarArchivado: (id: string) => void
 }
@@ -21,10 +28,12 @@ export function SelectorCuadernos({
   onAbrir,
   onCrear,
   onRenombrar,
+  onCambiarColor,
   onEliminar,
   onAlternarArchivado,
 }: Props) {
   const [nombreNuevo, setNombreNuevo] = useState('')
+  const [colorNuevo, setColorNuevo] = useState<ColorId>(COLOR_MATERIA_POR_DEFECTO)
   const [creando, setCreando] = useState(false)
   const [verArchivadas, setVerArchivadas] = useState(false)
 
@@ -38,14 +47,21 @@ export function SelectorCuadernos({
 
   const numArchivadas = useMemo(() => cuadernos.filter((c) => c.archivado).length, [cuadernos])
 
+  const cancelarCreacion = () => {
+    setNombreNuevo('')
+    setColorNuevo(COLOR_MATERIA_POR_DEFECTO)
+    setCreando(false)
+  }
+
   const confirmarCreacion = () => {
     const limpio = nombreNuevo.trim()
     if (!limpio) {
-      setCreando(false)
+      cancelarCreacion()
       return
     }
-    onCrear(limpio)
+    onCrear(limpio, colorNuevo)
     setNombreNuevo('')
+    setColorNuevo(COLOR_MATERIA_POR_DEFECTO)
     setCreando(false)
   }
 
@@ -69,12 +85,28 @@ export function SelectorCuadernos({
               onChange={(evento) => setNombreNuevo(evento.target.value)}
               onKeyDown={(evento) => {
                 if (evento.key === 'Enter') confirmarCreacion()
-                if (evento.key === 'Escape') {
-                  setNombreNuevo('')
-                  setCreando(false)
-                }
+                if (evento.key === 'Escape') cancelarCreacion()
               }}
             />
+            {/*
+              El color se elige al crear, no después: es lo que distingue una
+              materia de otra de un vistazo en la rejilla, y pedirlo aquí evita
+              tener que volver a la tarjeta para asignarlo.
+            */}
+            <div className="muestras-color" role="group" aria-label="Color de la materia">
+              {CLAVES_COLOR.map((clave) => (
+                <button
+                  key={clave}
+                  type="button"
+                  className={`muestra-color${colorNuevo === clave ? ' activa' : ''}`}
+                  style={{ background: PALETA[clave].fondo, borderColor: PALETA[clave].acento }}
+                  title={PALETA[clave].nombre}
+                  aria-label={`Color ${PALETA[clave].nombre}`}
+                  aria-pressed={colorNuevo === clave}
+                  onClick={() => setColorNuevo(clave)}
+                />
+              ))}
+            </div>
             <button type="button" className="boton-primario" onClick={confirmarCreacion}>
               Crear
             </button>
@@ -125,6 +157,7 @@ export function SelectorCuadernos({
               cuaderno={cuaderno}
               onAbrir={onAbrir}
               onRenombrar={onRenombrar}
+              onCambiarColor={onCambiarColor}
               onEliminar={onEliminar}
               onAlternarArchivado={onAlternarArchivado}
             />

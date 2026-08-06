@@ -117,11 +117,13 @@ export function ElementoLienzo({ id, data, selected, variante }: PropsElementoLi
 
   return (
     <>
+      {/* Las asas de redimensionar, en el acento de la app (--acento). Va aquí
+          como valor porque React Flow lo pinta en un atributo, no en una clase. */}
       <NodeResizer
         isVisible={selected}
         minWidth={minimas.ancho}
         minHeight={minimas.alto}
-        color="#6366f1"
+        color="#3e6c93"
       />
 
       <div

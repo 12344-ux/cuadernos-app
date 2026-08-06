@@ -1,14 +1,78 @@
+/*
+ * La paleta entera, en un sitio.
+ *
+ * El fondo base no es blanco: es un crema cálido. El blanco puro cansa la vista
+ * en una app donde se lee y se escribe durante horas, así que queda reservado
+ * para lo que debe destacar sobre el crema (las tarjetas, la hoja de apuntes,
+ * los campos donde se escribe). El texto tampoco es negro puro, por lo mismo.
+ *
+ * Todos los neutros son cálidos. Antes salían de la escala 'slate' de Tailwind,
+ * que tira a azul: mezclada con un fondo crema, cada gris se veía sucio y cada
+ * borde parecía de otra familia. Los tonos de aquí comparten temperatura.
+ */
 :root {
-  --tinta: #0f172a;
-  --tinta-suave: #64748b;
-  --linea: #e2e8f0;
-  --fondo: #f7f8fa;
+  /* ---- Neutros ---- */
+  --tinta: #2c2c2a;
+  --tinta-hover: #45443f;
+  --tinta-suave: #6b6a63;
+  /*
+   * El gris más claro que sigue leyéndose: puntos de conexión, asa del divisor,
+   * flechas del mapa, teclas de atajo. Está en 3.1:1 sobre el crema, que es el
+   * mínimo para un elemento gráfico que significa algo; los grises azulados que
+   * había antes en estos sitios (#94a3b8, #b6c2d1) no llegaban ni a 2:1.
+   */
+  --tinta-tenue: #8c897e;
+  --linea: #e4e0d6;
+  --linea-fuerte: #d6d1c4;
+  --fondo: #f4f1ea;
   --superficie: #ffffff;
-  --acento: #4f46e5;
-  --acento-suave: #eef2ff;
-  --peligro: #dc2626;
+  /* Casi blanco: paneles que destacan sobre el crema pero no son papel. */
+  --superficie-clara: #faf8f3;
+  /* Cromo: la columna de clases, los pies de panel. Va por debajo del fondo. */
+  --superficie-tenue: #efebe1;
+  --superficie-hover: #e6e1d5;
+
+  /* ---- Acento ---- */
+  /*
+   * Un azul apagado, no el indigo saturado de antes. Marca lo interactivo (foco,
+   * selección, pestaña activa) sin competir con el fondo. No puede ser ámbar:
+   * ese color ya significa "pendiente" en la agenda y en las pastillas.
+   */
+  --acento: #3e6c93;
+  --acento-suave: #e8edf3;
+  --acento-borde: #d5e3ec;
+
+  /* ---- Familias semánticas ---- */
+  /*
+   * Cada estado es un fondo tenue + un texto oscuro de la misma familia. Un
+   * patrón y solo uno: antes las pastillas de la nube usaban fondo tenue y el
+   * aviso de guardado usaba borde de color sobre blanco, y siendo lo mismo se
+   * veían como dos cosas distintas.
+   */
+  --ok-fondo: #e7efe3;
+  --ok-borde: #d5e2ce;
+  --ok-tinta: #4a6b3d;
+
+  --aviso-fondo: #faebd3;
+  --aviso-borde: #efdcbe;
+  --aviso-tinta: #8a5a1e;
+  --aviso-acento: #d9a15b;
+  --aviso-tenue: #a07636;
+
+  --info-fondo: #e9f1f6;
+  --info-borde: #d5e3ec;
+  --info-tinta: #3a5e80;
+
+  --error-fondo: #f6e3df;
+  --error-borde: #ebcec7;
+  --error-tinta: #a03e2f;
+
+  --peligro: #b3432e;
+  --peligro-fuerte: #94301f;
+
   --radio: 10px;
-  --sombra: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06);
+  /* La sombra también es cálida: en gris azulado se veía como una mancha gris. */
+  --sombra: 0 1px 2px rgba(44, 44, 42, 0.06), 0 8px 24px rgba(44, 44, 42, 0.07);
 
   font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
@@ -48,13 +112,19 @@ button {
   transition: background 0.15s, border-color 0.15s;
 }
 
+/*
+ * El botón primario es tinta, no color. Un botón de color en cada esquina
+ * competiría con los colores que aquí significan algo (el de cada materia, el
+ * ámbar de la agenda, los cuatro del repaso); en tinta se lee como la acción
+ * principal sin gastar un color que haga falta para informar.
+ */
 .boton-primario {
-  background: var(--acento);
-  color: #fff;
+  background: var(--tinta);
+  color: var(--fondo);
 }
 
 .boton-primario:hover {
-  background: #4338ca;
+  background: var(--tinta-hover);
 }
 
 .boton-secundario {
@@ -64,8 +134,37 @@ button {
 }
 
 .boton-secundario:hover {
-  border-color: #cbd5e1;
-  background: #f8fafc;
+  border-color: var(--linea-fuerte);
+  background: var(--superficie-clara);
+}
+
+/*
+ * El botón que abre Estudio Activo, y el que parte la pantalla en dos dentro de
+ * esa vista. No tenían ninguna regla: se veían como botones nativos del
+ * navegador, en gris azulado y con su propio borde biselado, que sobre el crema
+ * eran lo único que delataba que la app no era del todo suya.
+ */
+.boton-estudio {
+  border-radius: var(--radio);
+  border: 1px solid var(--linea);
+  padding: 0.5rem 0.9rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  background: var(--superficie);
+  color: var(--tinta);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.boton-estudio:hover {
+  border-color: var(--linea-fuerte);
+  background: var(--superficie-clara);
+}
+
+/* Partida activa: hundido, como una pestaña pulsada. */
+.boton-estudio.activo {
+  background: var(--acento-suave);
+  border-color: var(--acento-borde);
+  color: var(--acento);
 }
 
 /* El propio botón tiene el aspecto de una nota adhesiva. */
@@ -116,7 +215,10 @@ button {
 
 .creador {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
+  /* Con la fila de colores dentro, en una pantalla estrecha hace falta bajar. */
+  flex-wrap: wrap;
 }
 
 .entrada-nombre {
@@ -163,9 +265,19 @@ button {
   gap: 1rem;
 }
 
+/*
+ * La tarjeta de una materia se tiñe con su color: una franja de 3 px arriba en el
+ * tono medio y el cuerpo en el tono más claro de la misma familia.
+ *
+ * Los tres valores llegan como variables en línea desde TarjetaCuaderno, que las
+ * saca de PALETA. Cada una cae en el neutro si no está, así que una materia sin
+ * color asignado (las creadas antes de que existiera el campo) se sigue viendo
+ * como la tarjeta clara de siempre.
+ */
 .tarjeta {
-  background: var(--superficie);
-  border: 1px solid var(--linea);
+  background: var(--materia-fondo, var(--superficie));
+  border: 1px solid var(--materia-borde, var(--linea));
+  border-top: 3px solid var(--materia-acento, var(--linea));
   border-radius: 14px;
   box-shadow: var(--sombra);
   display: flex;
@@ -175,7 +287,7 @@ button {
 }
 
 .tarjeta:hover {
-  border-color: #c7d2fe;
+  border-color: var(--materia-acento, var(--linea-fuerte));
   transform: translateY(-2px);
 }
 
@@ -212,8 +324,13 @@ button {
 .tarjeta-acciones {
   display: flex;
   gap: 0.25rem;
+  /*
+   * Con "Color" ya son cuatro acciones, y en una tarjeta estrecha no caben en una
+   * línea: sin esto se desbordaban por el canto derecho en lugar de bajar.
+   */
+  flex-wrap: wrap;
   padding: 0.5rem 0.7rem 0.7rem;
-  border-top: 1px solid var(--linea);
+  border-top: 1px solid var(--materia-borde, var(--linea));
   margin-top: auto;
 }
 
@@ -227,14 +344,37 @@ button {
   border-radius: 6px;
 }
 
+/*
+ * El hover se oscurece con una capa translúcida en vez de con un gris fijo: sobre
+ * el tinte de la materia, un gris opaco se vería como un parche de otro color.
+ */
 .tarjeta-acciones button:hover {
-  background: #f1f5f9;
+  background: rgba(44, 44, 42, 0.07);
   color: var(--tinta);
 }
 
 .tarjeta-acciones button.peligro:hover {
-  background: #fef2f2;
+  background: var(--error-fondo);
   color: var(--peligro);
+}
+
+/*
+ * La fila de colores, tanto al crear una materia como al cambiárselo desde su
+ * tarjeta. Reutiliza '.muestra-color' de la barra de formato: es el mismo gesto
+ * (elegir un color de la paleta) y conviene que se vea igual en los dos sitios.
+ */
+.muestras-color {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+/* En la tarjeta, la fila va donde estaban las acciones y con su mismo margen. */
+.tarjeta .muestras-color {
+  padding: 0.5rem 0.7rem 0.7rem;
+  border-top: 1px solid var(--materia-borde, var(--linea));
+  margin-top: auto;
 }
 
 .vacio {
@@ -277,13 +417,23 @@ button {
 
 .boton-volver:hover {
   color: var(--tinta);
-  border-color: #cbd5e1;
+  border-color: var(--linea-fuerte);
 }
 
+/*
+ * El nombre de la materia se tiñe con su color, que llega como variable en línea
+ * desde VistaCuaderno. Es el único rastro del color dentro de la materia, y basta
+ * para saber en cuál estás sin leer.
+ *
+ * Se tiñe el título y no la barra entera: un fondo de color aquí obligaría a
+ * recalcular el contraste de todo lo que la barra contiene, y con siete colores
+ * alguno saldría perdiendo.
+ */
 .titulo-cuaderno {
   margin: 0;
   font-size: 1rem;
   font-weight: 650;
+  color: var(--materia-texto, var(--tinta));
 }
 
 .lienzo {
@@ -304,7 +454,7 @@ button {
 }
 
 .panel-ayuda {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(252, 250, 245, 0.9);
   border: 1px solid var(--linea);
   border-radius: 999px;
   padding: 0.3rem 0.8rem;
@@ -327,22 +477,23 @@ button {
   color: var(--tinta-suave);
 }
 
+/* Las mismas tres familias que las pastillas de la nube, con los mismos tokens. */
 .estado-guardado.estado-guardando {
-  color: #b45309;
-  border-color: #fcd34d;
-  background: #fffbeb;
+  color: var(--aviso-tinta);
+  border-color: var(--aviso-borde);
+  background: var(--aviso-fondo);
 }
 
 .estado-guardado.estado-guardado {
-  color: #15803d;
-  border-color: #86efac;
-  background: #f0fdf4;
+  color: var(--ok-tinta);
+  border-color: var(--ok-borde);
+  background: var(--ok-fondo);
 }
 
 .estado-guardado.estado-error {
-  color: var(--peligro);
-  border-color: #fca5a5;
-  background: #fef2f2;
+  color: var(--error-tinta);
+  border-color: var(--error-borde);
+  background: var(--error-fondo);
 }
 
 /* ---------- Elementos del lienzo: cuadros y post-its ---------- */
@@ -360,7 +511,7 @@ button {
 
 .es-cuadro {
   border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 1px 2px rgba(44, 44, 42, 0.05);
 }
 
 .es-cuadro.seleccionado {
@@ -376,11 +527,11 @@ button {
 .es-postit {
   border-radius: 2px;
   transform: rotate(-1.2deg);
-  box-shadow: 0 5px 14px rgba(15, 23, 42, 0.16), 0 1px 2px rgba(15, 23, 42, 0.1);
+  box-shadow: 0 5px 14px rgba(44, 44, 42, 0.16), 0 1px 2px rgba(44, 44, 42, 0.1);
 }
 
 .es-postit.seleccionado {
-  box-shadow: 0 0 0 2px var(--acento), 0 5px 14px rgba(15, 23, 42, 0.16);
+  box-shadow: 0 0 0 2px var(--acento), 0 5px 14px rgba(44, 44, 42, 0.16);
 }
 
 /*
@@ -401,7 +552,7 @@ button {
     var(--tono-borde) 44% 54%,
     rgba(255, 255, 255, 0.92) 54%
   );
-  box-shadow: -1px -1px 2px rgba(15, 23, 42, 0.1);
+  box-shadow: -1px -1px 2px rgba(44, 44, 42, 0.1);
   pointer-events: none;
 }
 
@@ -692,7 +843,7 @@ mark[data-color='rosa'] {
   margin: 0.35em 0;
   border-radius: 5px;
   /* Hasta que carga, el hueco no es un vacío sin explicación. */
-  background: rgba(15, 23, 42, 0.04);
+  background: rgba(44, 44, 42, 0.04);
 }
 
 /* Al seleccionarla para borrarla, se ve que está seleccionada. */
@@ -715,9 +866,9 @@ mark[data-color='rosa'] {
   font-size: 0.68rem;
   font-weight: 600;
   text-align: center;
-  color: #7f1d1d;
-  background: rgba(254, 226, 226, 0.96);
-  border-top: 1px solid #fca5a5;
+  color: var(--error-tinta);
+  background: rgba(246, 227, 223, 0.96);
+  border-top: 1px solid var(--error-borde);
   border-radius: 0 0 var(--radio) var(--radio);
   pointer-events: none;
 }
@@ -726,7 +877,7 @@ mark[data-color='rosa'] {
   width: 9px;
   height: 9px;
   background: var(--superficie);
-  border: 1.5px solid #94a3b8;
+  border: 1.5px solid var(--tinta-tenue);
   opacity: 0;
   transition: opacity 0.12s;
 }
@@ -913,17 +1064,17 @@ mark[data-color='rosa'] {
 }
 
 .boton-barra:hover {
-  background: #f1f5f9;
+  background: var(--superficie-hover);
   color: var(--tinta);
 }
 
 .boton-barra.activo {
-  background: #fef9c3;
-  color: #854d0e;
+  background: var(--aviso-fondo);
+  color: var(--aviso-tinta);
 }
 
 .boton-barra.peligro:hover {
-  background: #fef2f2;
+  background: var(--error-fondo);
   color: var(--peligro);
 }
 
@@ -949,7 +1100,7 @@ mark[data-color='rosa'] {
 }
 
 .react-flow__edge-path {
-  stroke: #94a3b8;
+  stroke: var(--tinta-tenue);
 }
 
 .react-flow__edge.selected .react-flow__edge-path {
@@ -1025,7 +1176,7 @@ mark[data-color='rosa'] {
 }
 
 .campo code {
-  background: #f1f5f9;
+  background: var(--superficie-hover);
   padding: 0.05em 0.3em;
   border-radius: 4px;
   font-size: 0.92em;
@@ -1055,9 +1206,9 @@ mark[data-color='rosa'] {
 
 .error-acceso {
   margin: 0;
-  background: #fef2f2;
-  border: 1px solid #fca5a5;
-  color: #b91c1c;
+  background: var(--error-fondo);
+  border: 1px solid var(--error-borde);
+  color: var(--error-tinta);
   border-radius: var(--radio);
   padding: 0.55rem 0.7rem;
   font-size: 0.83rem;
@@ -1104,13 +1255,18 @@ button[disabled] {
   margin-bottom: 1.25rem;
 }
 
+/*
+ * La pastilla neutra. Como las de color, va con fondo tenue y no con fondo
+ * blanco: así las cinco variantes son la misma forma con distinta familia, y
+ * "Conectado" no parece de otra especie que "Todo guardado".
+ */
 .pastilla {
   font-size: 0.74rem;
   font-weight: 650;
   padding: 0.28rem 0.6rem;
   border-radius: 999px;
   border: 1px solid var(--linea);
-  background: var(--superficie);
+  background: var(--superficie-tenue);
   color: var(--tinta-suave);
   white-space: nowrap;
   max-width: 22rem;
@@ -1119,27 +1275,27 @@ button[disabled] {
 }
 
 .pastilla-ok {
-  color: #15803d;
-  border-color: #86efac;
-  background: #f0fdf4;
+  color: var(--ok-tinta);
+  border-color: var(--ok-borde);
+  background: var(--ok-fondo);
 }
 
 .pastilla-aviso {
-  color: #b45309;
-  border-color: #fcd34d;
-  background: #fffbeb;
+  color: var(--aviso-tinta);
+  border-color: var(--aviso-borde);
+  background: var(--aviso-fondo);
 }
 
 .pastilla-trabajando {
-  color: #1d4ed8;
-  border-color: #93c5fd;
-  background: #eff6ff;
+  color: var(--info-tinta);
+  border-color: var(--info-borde);
+  background: var(--info-fondo);
 }
 
 .pastilla-error {
-  color: var(--peligro);
-  border-color: #fca5a5;
-  background: #fef2f2;
+  color: var(--error-tinta);
+  border-color: var(--error-borde);
+  background: var(--error-fondo);
 }
 
 .boton-secundario.pequeno,
@@ -1150,7 +1306,7 @@ button[disabled] {
 
 .boton-primario:disabled {
   background: var(--linea);
-  color: #94a3b8;
+  color: var(--tinta-tenue);
   cursor: not-allowed;
 }
 
@@ -1170,25 +1326,25 @@ button[disabled] {
 }
 
 .boton-discreto:hover {
-  background: #f1f5f9;
+  background: var(--superficie-hover);
   color: var(--tinta);
 }
 
 .boton-discreto.peligro:hover {
-  background: #fef2f2;
+  background: var(--error-fondo);
   color: var(--peligro);
 }
 
 .boton-peligro {
   background: var(--peligro);
-  color: #fff;
+  color: var(--fondo);
   border: 1px solid transparent;
   border-radius: var(--radio);
   font-weight: 600;
 }
 
 .boton-peligro:hover {
-  background: #b91c1c;
+  background: var(--peligro-fuerte);
 }
 
 .espaciador {
@@ -1290,8 +1446,8 @@ button[disabled] {
 }
 
 .boton-flashcards:hover {
-  background: #e0e7ff;
-  border-color: #c7d2fe;
+  background: var(--acento-borde);
+  border-color: var(--acento);
 }
 
 /* ---------- Paneles, mazos y tarjetas ---------- */
@@ -1352,7 +1508,7 @@ button[disabled] {
 }
 
 .tarjeta-mazo:hover {
-  border-color: #cbd5e1;
+  border-color: var(--linea-fuerte);
 }
 
 .nombre-mazo {
@@ -1399,7 +1555,7 @@ button[disabled] {
 /* Una tarjeta sin ver todavía: el mismo lenguaje que el resto de pastillas. */
 .pastilla-nueva {
   background: var(--acento-suave);
-  border-color: #c7d2fe;
+  border-color: var(--acento-borde);
   color: var(--acento);
 }
 
@@ -1436,7 +1592,7 @@ button[disabled] {
 }
 
 .extracto-vacio {
-  color: #94a3b8;
+  color: var(--tinta-tenue);
   font-style: italic;
 }
 
@@ -1446,7 +1602,7 @@ button[disabled] {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
-  background: #f8fafc;
+  background: var(--superficie-clara);
   border: 1px solid var(--linea);
   border-radius: var(--radio);
   padding: 1rem;
@@ -1561,21 +1717,25 @@ button[disabled] {
  * de un vistazo si estás mirando la pregunta o la respuesta, incluso a media
  * animación de volteo.
  *
- * Son los tonos 100 y 300 de las mismas familias de las que sale toda la paleta
- * de la app. Se usa el 100 y no el 50 de los cuadros del mapa porque una cara
- * mide unos 320 px de alto: a ese tamaño el tono más claro se ve blanco.
+ * Antes el color estaba en el fondo, y una cara de unos 320 px pintada de azul o
+ * lavanda plano era la mancha de color más grande de la app. Ahora las dos caras
+ * son papel crema y el color se ha mudado al borde y al texto: la señal se
+ * conserva a media animación de volteo, que es lo que tenía que conservarse, sin
+ * que la pantalla entera cambie de color al girar.
+ *
+ * Los dos tonos son el 'acento' de las familias azul y violeta de PALETA.
  */
 .cara-frente {
-  background: #e0f2fe;
-  border-color: #7dd3fc;
-  color: #0c4a6e;
+  background: #fdfbf5;
+  border-color: #5b8cae;
+  color: #274c68;
 }
 
 .cara-dorso {
   transform: rotateY(180deg);
-  background: #ede9fe;
-  border-color: #c4b5fd;
-  color: #2e1065;
+  background: #fdfbf5;
+  border-color: #8a79b8;
+  color: #45356b;
 }
 
 /* La tipografía propia para el contenido: es el texto protagonista. */
@@ -1606,13 +1766,14 @@ button[disabled] {
 
 /* ---------- Los cuatro botones ---------- */
 
+/* En tinta, como el resto de acciones principales de la app. */
 .boton-ver-respuesta {
   align-self: center;
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  background: var(--acento);
-  color: #fff;
+  background: var(--tinta);
+  color: var(--fondo);
   border: none;
   border-radius: var(--radio);
   padding: 0.75rem 1.6rem;
@@ -1621,7 +1782,7 @@ button[disabled] {
 }
 
 .boton-ver-respuesta:hover {
-  background: #4338ca;
+  background: var(--tinta-hover);
 }
 
 .pista-tecla {
@@ -1681,15 +1842,20 @@ button[disabled] {
   top: 0.25rem;
   right: 0.35rem;
   font-size: 0.62rem;
-  color: #b6c2d1;
+  color: var(--tinta-tenue);
 }
 
+/*
+ * Los cuatro conservan exactamente su significado: rojo, ámbar, verde y azul, en
+ * ese orden y sin excepción. Lo único que cambia son los valores, que eran los
+ * de la escala fría y junto a los tonos nuevos se veían de otra app.
+ */
 .boton-respuesta.es-otra_vez {
-  border-color: #fca5a5;
+  border-color: #dca79b;
 }
 
 .boton-respuesta.es-otra_vez:hover {
-  background: #fef2f2;
+  background: var(--error-fondo);
 }
 
 .boton-respuesta.es-otra_vez .respuesta-nombre {
@@ -1697,39 +1863,39 @@ button[disabled] {
 }
 
 .boton-respuesta.es-dificil {
-  border-color: #fcd34d;
+  border-color: #e2c48e;
 }
 
 .boton-respuesta.es-dificil:hover {
-  background: #fffbeb;
+  background: var(--aviso-fondo);
 }
 
 .boton-respuesta.es-dificil .respuesta-nombre {
-  color: #b45309;
+  color: var(--aviso-tinta);
 }
 
 .boton-respuesta.es-bien {
-  border-color: #86efac;
+  border-color: #b4c9a5;
 }
 
 .boton-respuesta.es-bien:hover {
-  background: #f0fdf4;
+  background: var(--ok-fondo);
 }
 
 .boton-respuesta.es-bien .respuesta-nombre {
-  color: #15803d;
+  color: var(--ok-tinta);
 }
 
 .boton-respuesta.es-facil {
-  border-color: #93c5fd;
+  border-color: #a9c2d6;
 }
 
 .boton-respuesta.es-facil:hover {
-  background: #eff6ff;
+  background: var(--info-fondo);
 }
 
 .boton-respuesta.es-facil .respuesta-nombre {
-  color: #1d4ed8;
+  color: var(--info-tinta);
 }
 
 /* ---------- Resumen del final ---------- */
@@ -1827,10 +1993,19 @@ button[disabled] {
   text-transform: capitalize;
 }
 
+/*
+ * La agenda es un bloque de aviso, no una tarjeta más.
+ *
+ * Va en ámbar y con la franja al canto porque es lo urgente del día: en blanco
+ * plano pesaba lo mismo que la lista de materias que tiene debajo, y lo primero
+ * que se ve al abrir la app debería ser esto. El redondeo solo del lado derecho
+ * es lo que hace que la franja se lea como un margen y no como un borde.
+ */
 .agenda-caja {
-  background: var(--superficie);
-  border: 1px solid var(--linea);
-  border-radius: 14px;
+  background: var(--aviso-fondo);
+  border: 1px solid var(--aviso-borde);
+  border-left: 3px solid var(--aviso-acento);
+  border-radius: 0 14px 14px 0;
   overflow: hidden;
 }
 
@@ -1845,7 +2020,8 @@ button[disabled] {
   align-items: center;
   gap: 0.7rem;
   padding: 0.6rem 0.9rem;
-  border-bottom: 1px solid var(--linea);
+  /* Divisores de la familia del bloque: en gris se veían como una rejilla ajena. */
+  border-bottom: 1px solid var(--aviso-borde);
 }
 
 .fila-tarea:last-child {
@@ -1865,24 +2041,30 @@ button[disabled] {
   width: 17px;
   height: 17px;
   flex: none;
-  accent-color: var(--acento);
+  accent-color: #b0762a;
   cursor: pointer;
 }
 
+/* El texto va en el tono oscuro del ámbar, no en la tinta general. */
 .texto-tarea {
   font-size: 0.92rem;
   overflow-wrap: anywhere;
+  color: var(--aviso-tinta);
 }
 
-/* Una tarea hecha se tacha y se atenúa, pero sigue a la vista el resto del día. */
+/*
+ * Una tarea hecha se tacha y se atenúa, pero sigue a la vista el resto del día.
+ * Atenuada, no ilegible: el tachado ya dice que está hecha, así que el color no
+ * necesita bajar de 3.5:1 sobre el ámbar para que se entienda.
+ */
 .fila-tarea.hecha .texto-tarea {
   text-decoration: line-through;
-  color: var(--tinta-suave);
+  color: #8f7a45;
 }
 
 .nota-tarea {
   font-size: 0.76rem;
-  color: var(--tinta-suave);
+  color: var(--aviso-tenue);
   white-space: nowrap;
 }
 
@@ -1937,8 +2119,8 @@ button[disabled] {
   gap: 0.5rem;
   flex-wrap: wrap;
   padding: 0.5rem 0.7rem;
-  border-top: 1px solid var(--linea);
-  background: #fcfdfe;
+  border-top: 1px solid var(--aviso-borde);
+  background: #f6e3c6;
 }
 
 /* Sin tareas no hay lista, así que el pie es todo el panel y no necesita borde. */
@@ -1949,7 +2131,25 @@ button[disabled] {
 .agenda-vacia {
   margin: 0 0.3rem 0 0.2rem;
   font-size: 0.9rem;
-  color: var(--tinta-suave);
+  color: var(--aviso-tenue);
+}
+
+/*
+ * Los botones discretos de dentro de la agenda (añadir tarea, editar, borrar) se
+ * suben al ámbar: en gris se veían apagados sobre el fondo de color.
+ */
+.agenda-caja .boton-discreto {
+  color: var(--aviso-tenue);
+}
+
+.agenda-caja .boton-discreto:hover {
+  background: rgba(138, 90, 30, 0.1);
+  color: var(--aviso-tinta);
+}
+
+.agenda-caja .boton-discreto.peligro:hover {
+  background: var(--error-fondo);
+  color: var(--peligro);
 }
 
 .fila-tarea.editando {
@@ -1998,12 +2198,17 @@ button[disabled] {
 
 /* ---------- La columna de clases ---------- */
 
+/*
+ * La columna de clases es cromo, no contenido: va en el gris cálido tenue, un
+ * paso por debajo del fondo de la hoja. En blanco competía con el papel que tiene
+ * al lado, que es donde se escribe y lo único que debería verse blanco aquí.
+ */
 .panel-clases {
   flex: 0 0 15rem;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: var(--superficie);
+  background: var(--superficie-tenue);
   border-right: 1px solid var(--linea);
   overflow-y: auto;
 }
@@ -2016,7 +2221,8 @@ button[disabled] {
   padding: 0.7rem 0.8rem 0.5rem;
   position: sticky;
   top: 0;
-  background: var(--superficie);
+  /* Opaco y del color de la columna: es lo que tapa las filas al desplazarse. */
+  background: var(--superficie-tenue);
   z-index: 1;
 }
 
@@ -2041,7 +2247,7 @@ button[disabled] {
 
 .boton-nueva-clase:hover {
   background: var(--acento-suave);
-  border-color: #c7d2fe;
+  border-color: var(--acento-borde);
 }
 
 .lista-clases {
@@ -2058,13 +2264,20 @@ button[disabled] {
 }
 
 .fila-clase:hover {
-  background: #f1f5f9;
+  background: var(--superficie-hover);
 }
 
-/* La clase abierta se marca con una barra al canto, como una pestaña. */
+/*
+ * La clase abierta se marca con la franja al canto, como una pestaña, y con un
+ * fondo apenas más oscuro.
+ *
+ * El peso lo lleva la franja y no el fondo: un fondo de color saturado en una
+ * lista donde solo una fila puede estar activa es más de lo que hace falta, y
+ * obligaba a que el color del fondo compitiera con el de la materia.
+ */
 .fila-clase.activa {
-  background: var(--acento-suave);
-  box-shadow: inset 2.5px 0 0 var(--acento);
+  background: var(--superficie-hover);
+  box-shadow: inset 3px 0 0 var(--acento);
 }
 
 .clase-enlace {
@@ -2170,7 +2383,7 @@ button[disabled] {
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--tinta-suave);
-  background: var(--superficie);
+  background: var(--superficie-tenue);
   border-bottom: 1px solid var(--linea);
   flex: 0 0 auto;
   /* Un nombre de clase largo no debe romper el alto de la cabecera. */
@@ -2210,7 +2423,7 @@ button[disabled] {
   background: var(--superficie);
   border: 1px solid var(--linea);
   border-radius: var(--radio);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 1px 2px rgba(44, 44, 42, 0.04);
   padding: 2.2rem 2.6rem;
 }
 
@@ -2308,7 +2521,7 @@ button[disabled] {
   height: auto;
   margin: 0.9em 0;
   border-radius: 6px;
-  background: rgba(15, 23, 42, 0.04);
+  background: rgba(44, 44, 42, 0.04);
 }
 
 .hoja-editor img.ProseMirror-selectednode {
@@ -2333,7 +2546,7 @@ button[disabled] {
 
 .divisor:hover,
 .divisor:focus-visible {
-  background: #c7d2fe;
+  background: var(--acento-borde);
   outline: none;
 }
 
@@ -2342,7 +2555,7 @@ button[disabled] {
   width: 2px;
   height: 26px;
   border-radius: 2px;
-  background: #94a3b8;
+  background: var(--tinta-tenue);
 }
 
 /* Mientras se arrastra, nada de seleccionar texto ni de cursores raros. */
@@ -2400,8 +2613,8 @@ body.arrastrando-divisor {
   padding: 0.45rem 0.9rem;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #7f1d1d;
-  background: #fee2e2;
-  border-bottom: 1px solid #fca5a5;
+  color: var(--error-tinta);
+  background: var(--error-fondo);
+  border-bottom: 1px solid var(--error-borde);
   flex: 0 0 auto;
 }
