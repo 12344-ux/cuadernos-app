@@ -1,8 +1,9 @@
 import { NodeResizer, useReactFlow } from '@xyflow/react'
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useRegistrarElemento, type ElementoActivo } from '../formato/contexto'
+import { usarPaleta } from '../modo/visual'
 import { htmlEstaVacio, sanearHtml } from '../texto/saneador'
-import { PALETA, type DatosNodo, type NodoCuaderno, type TipoElemento } from '../tipos'
+import type { DatosNodo, NodoCuaderno, TipoElemento } from '../tipos'
 import { EditorNodoDiferido } from './editorDiferido'
 
 /** Un post-it tiende a ser más cuadrado; un cuadro, más ancho que alto. */
@@ -31,7 +32,8 @@ type PropsElementoLienzo = {
 export function ElementoLienzo({ id, data, selected, variante }: PropsElementoLienzo) {
   const { updateNodeData, deleteElements } = useReactFlow<NodoCuaderno>()
   const [editando, setEditando] = useState(false)
-  const colores = PALETA[data.color] ?? PALETA.pizarra
+  const paleta = usarPaleta()
+  const colores = paleta[data.color] ?? paleta.pizarra
   const minimas = MEDIDAS_MINIMAS[variante]
   const esPostit = variante === 'postit'
 

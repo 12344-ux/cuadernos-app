@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { BarraFormato } from '../componentes/BarraFormato'
+import { BotonModoVisual } from '../componentes/BotonModoVisual'
 import { ListaTarjetas } from '../componentes/ListaTarjetas'
 import { SesionEstudio } from '../componentes/SesionEstudio'
 import { useMazos } from '../hooks/useMazos'
@@ -175,6 +176,9 @@ export function PantallaFlashcards({ cuaderno, onActividad }: Props) {
           <span className="titulo-estudio-marca">Flashcards</span>
           <h1>{cuaderno.nombre}</h1>
         </div>
+        <div className="espaciador" />
+        {/* Esta pantalla no lleva BarraNube, así que monta el interruptor aparte. */}
+        <BotonModoVisual />
       </header>
 
       {/* Las caras de una tarjeta usan el mismo editor que el resto, así que su

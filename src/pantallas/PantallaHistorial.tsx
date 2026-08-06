@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { historialPorDia, proximas } from '../agenda/consultas'
 import type { Tarea } from '../agenda/tipos'
+import { BotonModoVisual } from '../componentes/BotonModoVisual'
 import { FilaTarea } from '../componentes/FilaTarea'
 import { diaCompletoLegible } from '../fechas'
 import { irAlSelector } from '../hooks/useRuta'
@@ -40,6 +41,9 @@ export function PantallaHistorial({ tareas, onAlternar, onEliminar }: Props) {
           </svg>
           Inicio
         </button>
+        <div className="espaciador" />
+        {/* Esta pantalla no lleva BarraNube, así que monta el interruptor aparte. */}
+        <BotonModoVisual />
       </header>
 
       <div className="selector-cabecera">

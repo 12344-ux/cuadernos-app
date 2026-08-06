@@ -1,12 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { TarjetaCuaderno } from '../componentes/TarjetaCuaderno'
-import {
-  CLAVES_COLOR,
-  COLOR_MATERIA_POR_DEFECTO,
-  PALETA,
-  type ColorId,
-  type Cuaderno,
-} from '../tipos'
+import { usarPaleta } from '../modo/visual'
+import { CLAVES_COLOR, COLOR_MATERIA_POR_DEFECTO, type ColorId, type Cuaderno } from '../tipos'
 
 type Props = {
   cuadernos: Cuaderno[]
@@ -32,6 +27,7 @@ export function SelectorCuadernos({
   onEliminar,
   onAlternarArchivado,
 }: Props) {
+  const paleta = usarPaleta()
   const [nombreNuevo, setNombreNuevo] = useState('')
   const [colorNuevo, setColorNuevo] = useState<ColorId>(COLOR_MATERIA_POR_DEFECTO)
   const [creando, setCreando] = useState(false)
@@ -99,9 +95,9 @@ export function SelectorCuadernos({
                   key={clave}
                   type="button"
                   className={`muestra-color${colorNuevo === clave ? ' activa' : ''}`}
-                  style={{ background: PALETA[clave].fondo, borderColor: PALETA[clave].acento }}
-                  title={PALETA[clave].nombre}
-                  aria-label={`Color ${PALETA[clave].nombre}`}
+                  style={{ background: paleta[clave].fondo, borderColor: paleta[clave].acento }}
+                  title={paleta[clave].nombre}
+                  aria-label={`Color ${paleta[clave].nombre}`}
                   aria-pressed={colorNuevo === clave}
                   onClick={() => setColorNuevo(clave)}
                 />
