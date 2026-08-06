@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BotonModoVisual } from './BotonModoVisual'
 import type { EstadoNube, EstadoSesion } from '../hooks/useNube'
 import type { DondeGuardar } from '../nube/credenciales'
 
@@ -59,6 +60,11 @@ export function BarraNube({
 
   return (
     <div className="barra-nube">
+      {/* El interruptor de modo visual vive aquí porque esta barra sale en las tres
+          pantallas principales. Las dos que no la llevan (flashcards e historial)
+          montan el botón por su cuenta. */}
+      <BotonModoVisual />
+
       <span className={`pastilla ${clase}`} title={mensaje ?? undefined}>
         {etiqueta}
       </span>

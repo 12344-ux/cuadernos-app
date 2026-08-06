@@ -28,6 +28,56 @@ export const PALETA = {
 
 export type ColorId = keyof typeof PALETA
 
+/** Un tono de la paleta. Sin literales, para que las dos paletas encajen igual. */
+export type Tono = {
+  nombre: string
+  borde: string
+  fondo: string
+  texto: string
+  mini: string
+  acento: string
+}
+
+/** La forma de una paleta, para poder tener una por modo visual. */
+export type Paleta = Record<ColorId, Tono>
+
+/**
+ * Los tonos del modo cómodo, subidos de intensidad.
+ *
+ * En una pantalla mala los tintes del modo profesional se vuelven indistinguibles
+ * unos de otros: medidos en CIELAB, el par más parecido (amarillo y naranja) está
+ * a una distancia de 3.5, y por debajo de 5 dos colores se ven prácticamente
+ * iguales incluso en un panel decente. Aquí el par más parecido está a 12.4, y
+ * cada tinte está a 11 o más del fondo en lugar de a 3.
+ *
+ * Los tonos de texto suben con los fondos para que el contraste no baje: el peor
+ * de los siete queda en 9.2 sobre su propio tinte.
+ *
+ * 'pizarra' es la excepción y va a blanco puro. Es la materia "sin color" y tiene
+ * que seguir leyéndose como una tarjeta clara sobre la página; con un tinte más
+ * oscuro que el fondo la relación se invertía y parecía un hueco.
+ */
+const TONOS_COMODOS: Record<ColorId, Omit<Tono, 'nombre'>> = {
+  pizarra: { borde: '#97896c', fondo: '#ffffff', texto: '#1a1a18', mini: '#8a8272', acento: '#7d7561' },
+  amarillo: { borde: '#d9a72c', fondo: '#fdeeb0', texto: '#4a2c05', mini: '#f59e0b', acento: '#bf8b16' },
+  verde: { borde: '#6f9c52', fondo: '#d3e7c1', texto: '#1f3d13', mini: '#22c55e', acento: '#55852f' },
+  azul: { borde: '#4a86b8', fondo: '#cbdef0', texto: '#0b2a54', mini: '#3b82f6', acento: '#2f6da4' },
+  violeta: { borde: '#7f68bb', fondo: '#ddd2f0', texto: '#2e1065', mini: '#8b5cf6', acento: '#6a51a8' },
+  rosa: { borde: '#c2547b', fondo: '#f8d0dd', texto: '#500724', mini: '#ec4899', acento: '#ab3d64' },
+  naranja: { borde: '#d9822c', fondo: '#fdd9b4', texto: '#431407', mini: '#f97316', acento: '#c26a12' },
+}
+
+/**
+ * La paleta del modo cómodo. Los nombres salen de PALETA y no se repiten aquí:
+ * son los mismos siete colores de cara al usuario, solo con otros valores.
+ */
+export const PALETA_COMODA: Paleta = Object.fromEntries(
+  (Object.keys(PALETA) as ColorId[]).map((clave) => [
+    clave,
+    { nombre: PALETA[clave].nombre, ...TONOS_COMODOS[clave] },
+  ]),
+) as Paleta
+
 export const COLOR_POR_DEFECTO: ColorId = 'pizarra'
 
 /** Las claves de la paleta, en el orden en que se ofrecen al elegir un color. */
@@ -42,9 +92,14 @@ export const CLAVES_COLOR = Object.keys(PALETA) as ColorId[]
  */
 export const COLOR_MATERIA_POR_DEFECTO: ColorId = 'pizarra'
 
-/** El color de una materia, tolerando las que aún no lo tienen. */
-export function colorDeMateria(cuaderno: Pick<Cuaderno, 'color'>) {
-  return PALETA[cuaderno.color ?? COLOR_MATERIA_POR_DEFECTO]
+/**
+ * El color de una materia, tolerando las que aún no lo tienen.
+ *
+ * Recibe la paleta en lugar de mirar PALETA directamente, para que quien llama
+ * pueda pasarle la del modo visual activo (ver usarPaleta en modo/visual.tsx).
+ */
+export function colorDeMateria(cuaderno: Pick<Cuaderno, 'color'>, paleta: Paleta = PALETA) {
+  return paleta[cuaderno.color ?? COLOR_MATERIA_POR_DEFECTO]
 }
 
 /**

@@ -1,13 +1,13 @@
 import type { Editor } from '@tiptap/core'
 import { useEffect, useState } from 'react'
 import { CLASE_BARRA_FORMATO, useFormato, type Historial } from '../formato/contexto'
+import { usarPaleta } from '../modo/visual'
 import {
   ALINEACIONES_TEXTO,
   CLAVES_COLOR,
   FUENTES,
   FUENTE_POR_DEFECTO,
   MARCADORES,
-  PALETA,
   TAMANOS,
   TAMANOS_TEXTO,
   type AlineacionTexto,
@@ -134,6 +134,7 @@ function useRepintarConElEditor(editor: Editor | null): void {
  */
 export function BarraFormato({ conElementos = false }: { conElementos?: boolean }) {
   const { editor: registrado, pedirImagen, elemento, historial } = useFormato()
+  const paleta = usarPaleta()
   useRepintarConElEditor(registrado)
 
   /*
@@ -461,9 +462,9 @@ export function BarraFormato({ conElementos = false }: { conElementos?: boolean 
                 key={clave}
                 type="button"
                 className={`muestra-color${elemento?.color === clave ? ' activa' : ''}`}
-                style={{ background: PALETA[clave].fondo, borderColor: PALETA[clave].borde }}
-                title={PALETA[clave].nombre}
-                aria-label={`Color ${PALETA[clave].nombre}`}
+                style={{ background: paleta[clave].fondo, borderColor: paleta[clave].borde }}
+                title={paleta[clave].nombre}
+                aria-label={`Color ${paleta[clave].nombre}`}
                 disabled={!elemento}
                 onMouseDown={noRobarFoco}
                 onClick={() => elemento?.onCambiar({ color: clave })}

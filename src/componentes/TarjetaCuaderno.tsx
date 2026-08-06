@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { CLAVES_COLOR, PALETA, colorDeMateria, type ColorId, type Cuaderno } from '../tipos'
+import { usarPaleta } from '../modo/visual'
+import { CLAVES_COLOR, colorDeMateria, type ColorId, type Cuaderno } from '../tipos'
 
 const formateador = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' })
 
@@ -30,7 +31,8 @@ export function TarjetaCuaderno({
   const [borrador, setBorrador] = useState(cuaderno.nombre)
   const entradaRef = useRef<HTMLInputElement | null>(null)
 
-  const tono = colorDeMateria(cuaderno)
+  const paleta = usarPaleta()
+  const tono = colorDeMateria(cuaderno, paleta)
 
   useEffect(() => {
     if (renombrando) entradaRef.current?.select()
@@ -102,10 +104,10 @@ export function TarjetaCuaderno({
             <button
               key={clave}
               type="button"
-              className={`muestra-color${tono === PALETA[clave] ? ' activa' : ''}`}
-              style={{ background: PALETA[clave].fondo, borderColor: PALETA[clave].acento }}
-              title={PALETA[clave].nombre}
-              aria-label={`Color ${PALETA[clave].nombre}`}
+              className={`muestra-color${tono === paleta[clave] ? ' activa' : ''}`}
+              style={{ background: paleta[clave].fondo, borderColor: paleta[clave].acento }}
+              title={paleta[clave].nombre}
+              aria-label={`Color ${paleta[clave].nombre}`}
               onClick={() => {
                 onCambiarColor(cuaderno.id, clave)
                 setEligiendoColor(false)

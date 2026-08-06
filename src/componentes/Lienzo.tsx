@@ -22,8 +22,8 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useHayEditorActivo, useRegistrarHistorial, type Historial } from '../formato/contexto'
 import { nuevoId } from '../almacenamiento/indice'
+import { usarPaleta, useModoVisual } from '../modo/visual'
 import {
-  PALETA,
   VERSION_DOCUMENTO,
   datosNodoPorDefecto,
   type DocumentoCuaderno,
@@ -581,9 +581,13 @@ export function Lienzo({
     }
   }, [estado])
 
-  const colorDeMinimapa = useCallback((nodo: NodoCuaderno) => {
-    return (PALETA[nodo.data.color] ?? PALETA.pizarra).mini
-  }, [])
+  const paleta = usarPaleta()
+  const { esComodo } = useModoVisual()
+
+  const colorDeMinimapa = useCallback(
+    (nodo: NodoCuaderno) => (paleta[nodo.data.color] ?? paleta.pizarra).mini,
+    [paleta],
+  )
 
   return (
     <div className="lienzo" ref={contenedorRef} onDoubleClick={alDobleClic}>
@@ -630,9 +634,20 @@ export function Lienzo({
         proOptions={{ hideAttribution: true }}
         aria-label={etiqueta}
       >
-        {/* La retícula, en el mismo gris cálido que los bordes de la app: en gris
-            azulado se veía como una trama fría sobre el fondo crema. */}
-        <Background variant={BackgroundVariant.Dots} gap={22} size={1.4} color="#d6d1c4" />
+        {/*
+          La retícula, en el mismo gris cálido que los bordes de la app: en gris
+          azulado se veía como una trama fría sobre el fondo crema.
+
+          En modo cómodo los puntos son menos y más gordos. Una trama fina y muy
+          densa es lo que peor sienta a un panel malo: los puntos caen entre
+          píxeles, cada uno se pinta distinto y el fondo entero parece vibrar.
+        */}
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={esComodo ? 28 : 22}
+          size={esComodo ? 2.2 : 1.4}
+          color={esComodo ? '#b9ac8b' : '#d6d1c4'}
+        />
         <Controls showInteractive={false} />
         <MiniMap
           pannable

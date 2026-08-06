@@ -4,6 +4,7 @@ import { cargarDocumento, guardarDocumento } from '../almacenamiento/documentos'
 import { BarraFormato } from '../componentes/BarraFormato'
 import { Lienzo } from '../componentes/Lienzo'
 import { irAlEstudioActivo, irAlSelector, irAlasFlashcards } from '../hooks/useRuta'
+import { usarPaleta } from '../modo/visual'
 import { colorDeMateria, type Cuaderno, type DocumentoCuaderno } from '../tipos'
 
 type Props = {
@@ -13,6 +14,7 @@ type Props = {
 }
 
 export function VistaCuaderno({ cuaderno, barraNube, onActividad }: Props) {
+  const paleta = usarPaleta()
   const [documento, setDocumento] = useState<DocumentoCuaderno | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -78,7 +80,7 @@ export function VistaCuaderno({ cuaderno, barraNube, onActividad }: Props) {
         */}
         <h1
           className="titulo-cuaderno"
-          style={{ '--materia-texto': colorDeMateria(cuaderno).texto } as CSSProperties}
+          style={{ '--materia-texto': colorDeMateria(cuaderno, paleta).texto } as CSSProperties}
         >
           {cuaderno.nombre}
         </h1>

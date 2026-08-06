@@ -73,11 +73,154 @@
   --radio: 10px;
   /* La sombra también es cálida: en gris azulado se veía como una mancha gris. */
   --sombra: 0 1px 2px rgba(44, 44, 42, 0.06), 0 8px 24px rgba(44, 44, 42, 0.07);
+  --sombra-postit: 0 5px 14px rgba(44, 44, 42, 0.16), 0 1px 2px rgba(44, 44, 42, 0.1);
+
+  /* ---- Medidas que cambian con el modo visual ---- */
+  /*
+   * Los grosores viven en tokens porque el modo cómodo los engorda todos a la vez:
+   * un borde de un píxel sobre un panel de baja resolución se reparte entre dos
+   * columnas de píxeles y se ve como una raya gris difusa, no como un borde.
+   */
+  --borde: 1px;
+  /* El de los cuadros y post-its del lienzo, que era más grueso ya de partida. */
+  --borde-elemento: 1.5px;
+  /* Las franjas de color: agenda, clase activa, cuadro seleccionado. */
+  --franja: 3px;
+  /* La de la tarjeta de materia, que es la que identifica a la asignatura. */
+  --franja-tarjeta: 3px;
+  --anillo-foco: 2px;
+
+  --interlineado: 1.45;
+  --interlineado-hoja: 1.65;
+  --interlineado-tarjeta: 1.4;
+  --peso-texto: 400;
+
+  /* Desde dónde arranca la banda del marcador de texto, y su opacidad. */
+  --marcador-desde: 22%;
+  --marcador-amarillo: rgba(250, 204, 21, 0.6);
+  --marcador-verde: rgba(74, 222, 128, 0.55);
+  --marcador-rosa: rgba(244, 114, 182, 0.5);
+
+  --seleccion: #c9dcea;
 
   font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
   color: var(--tinta);
   -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * =========================================================================
+ * Modo cómodo
+ * =========================================================================
+ *
+ * Pensado para pantallas que cansan la vista: paneles de portátil baratos, TN
+ * lavados, proyectores, monitores viejos. En esas pantallas el diseño del modo
+ * profesional trabaja en contra, porque está hecho de matices: tintes de un 5 %
+ * de saturación que se ven todos iguales, bordes de un píxel que salen borrosos,
+ * sombras de un 6 % de opacidad que no llegan a verse y solo ensucian.
+ *
+ * Aquí se cambia de estrategia: menos sutileza y más contraste. Letra más grande
+ * y más suelta, texto más sólido, bordes del doble de grueso, colores bastante
+ * más saturados y ninguna señal que dependa de un matiz.
+ *
+ * Todo lo del modo cómodo vive dentro de este selector. El modo profesional
+ * queda exactamente como estaba.
+ */
+[data-modo='comodo'] {
+  /* ---- Neutros: fondo más cálido y textos más sólidos ---- */
+  --tinta: #1a1a18;
+  --tinta-hover: #33322e;
+  --tinta-suave: #4a4943;
+  --tinta-tenue: #6a6862;
+  --linea: #ada07f;
+  --linea-fuerte: #97896c;
+  --fondo: #f2ebdb;
+  --superficie: #ffffff;
+  --superficie-clara: #fbf7ee;
+  --superficie-tenue: #e8dfc9;
+  --superficie-hover: #dbd0b6;
+
+  --acento: #1f5680;
+  --acento-suave: #d3e3f0;
+  --acento-borde: #7fa9c8;
+
+  /*
+   * ---- Familias semánticas, subidas de intensidad ----
+   *
+   * Lo que más se gana está en los bordes. En el modo profesional los cuatro
+   * bordes de pastilla están entre 1.16 y 1.31 de contraste contra el fondo de la
+   * app, o sea que no se ven: la familia se reconoce solo por el tinte. Aquí van
+   * de 2.38 a 4.02, así que el borde vuelve a ser una señal por sí mismo.
+   */
+  --ok-fondo: #cfe6c4;
+  --ok-borde: #6f9c52;
+  --ok-tinta: #2c5320;
+
+  --aviso-fondo: #fbdfa8;
+  --aviso-borde: #c98f22;
+  --aviso-tinta: #6b4210;
+  --aviso-acento: #c98f22;
+  --aviso-tenue: #7d5216;
+
+  --info-fondo: #cfe2f0;
+  --info-borde: #3f7cae;
+  --info-tinta: #1c456b;
+
+  --error-fondo: #f7d2ca;
+  --error-borde: #bd5139;
+  --error-tinta: #7d2a1c;
+
+  --peligro: #96301c;
+  --peligro-fuerte: #7a2414;
+
+  /* ---- Grosores y relieve ---- */
+  --borde: 2px;
+  --borde-elemento: 2px;
+  --franja: 4px;
+  --franja-tarjeta: 5px;
+  --anillo-foco: 3px;
+  /* Menos redondeo: una curva muy amplia a baja resolución se ve dentada. */
+  --radio: 8px;
+  /*
+   * Sin sombra en tarjetas y paneles: a un 6 % de opacidad no se distingue en
+   * estas pantallas, y el borde de 2 px hace el trabajo de separar mucho mejor.
+   */
+  --sombra: none;
+  /*
+   * La del post-it sí se queda, y más marcada. Es una de las cuatro señales que
+   * distinguen un post-it de un cuadro sin depender del color, y quitarla dejaría
+   * la diferencia en manos del tono.
+   */
+  --sombra-postit: 0 4px 10px rgba(44, 44, 42, 0.28), 0 1px 2px rgba(44, 44, 42, 0.18);
+
+  /* ---- Letra ---- */
+  /*
+   * 18 px en la raíz en lugar de 16. Como toda la app mide en 'rem', esto sube a
+   * la vez el cuerpo de letra y los espaciados: no es solo texto más grande, es
+   * la interfaz entera con más aire.
+   */
+  font-size: 112.5%;
+  /*
+   * Y aquí se apaga el suavizado. 'antialiased' adelgaza los trazos en macOS, que
+   * es justo lo contrario de lo que hace falta: con 'auto' el texto recupera su
+   * grosor real y se lee mucho mejor en un panel pobre.
+   */
+  -webkit-font-smoothing: auto;
+
+  --interlineado: 1.7;
+  --interlineado-hoja: 1.85;
+  --interlineado-tarjeta: 1.6;
+  --peso-texto: 480;
+
+  /* ---- Marcadores de texto ---- */
+  /* Más opacos y con la banda más alta, para que los tres se distingan. */
+  --marcador-desde: 30%;
+  --marcador-amarillo: rgba(250, 204, 21, 0.85);
+  --marcador-verde: rgba(74, 222, 128, 0.85);
+  --marcador-rosa: rgba(244, 114, 182, 0.85);
+
+  --seleccion: #9fc4de;
 }
 
 * {
@@ -93,6 +236,24 @@ body,
 
 body {
   background: var(--fondo);
+  /*
+   * En modo cómodo el texto va algo más grueso (480 en vez de 400). Sube el
+   * contraste percibido sin tocar el color, que es lo que hace falta cuando el
+   * panel ya lava los tonos de por sí.
+   */
+  font-weight: var(--peso-texto);
+}
+
+/*
+ * La selección de texto, explícita.
+ *
+ * Sin esto manda la del navegador, que suele ser un azul flojo y translúcido:
+ * justo el tipo de señal que se pierde en una pantalla mala, y encima cambia de
+ * un navegador a otro.
+ */
+::selection {
+  background: var(--seleccion);
+  color: var(--tinta);
 }
 
 button {
@@ -105,7 +266,7 @@ button {
 .boton-primario,
 .boton-secundario {
   border-radius: var(--radio);
-  border: 1px solid transparent;
+  border: var(--borde) solid transparent;
   padding: 0.5rem 0.9rem;
   font-weight: 600;
   font-size: 0.875rem;
@@ -146,7 +307,7 @@ button {
  */
 .boton-estudio {
   border-radius: var(--radio);
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   padding: 0.5rem 0.9rem;
   font-weight: 600;
   font-size: 0.875rem;
@@ -170,7 +331,7 @@ button {
 /* El propio botón tiene el aspecto de una nota adhesiva. */
 .boton-postit {
   border-radius: var(--radio);
-  border: 1px solid #fcd34d;
+  border: var(--borde) solid #fcd34d;
   padding: 0.5rem 0.9rem;
   font-weight: 600;
   font-size: 0.875rem;
@@ -225,7 +386,7 @@ button {
   font: inherit;
   font-size: 0.9rem;
   padding: 0.5rem 0.7rem;
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   border-radius: var(--radio);
   background: var(--superficie);
   color: var(--tinta);
@@ -233,7 +394,7 @@ button {
 }
 
 .entrada-nombre:focus {
-  outline: 2px solid var(--acento);
+  outline: var(--anillo-foco) solid var(--acento);
   outline-offset: -1px;
   border-color: var(--acento);
 }
@@ -276,8 +437,8 @@ button {
  */
 .tarjeta {
   background: var(--materia-fondo, var(--superficie));
-  border: 1px solid var(--materia-borde, var(--linea));
-  border-top: 3px solid var(--materia-acento, var(--linea));
+  border: var(--borde) solid var(--materia-borde, var(--linea));
+  border-top: var(--franja-tarjeta) solid var(--materia-acento, var(--linea));
   border-radius: 14px;
   box-shadow: var(--sombra);
   display: flex;
@@ -330,7 +491,7 @@ button {
    */
   flex-wrap: wrap;
   padding: 0.5rem 0.7rem 0.7rem;
-  border-top: 1px solid var(--materia-borde, var(--linea));
+  border-top: var(--borde) solid var(--materia-borde, var(--linea));
   margin-top: auto;
 }
 
@@ -373,7 +534,7 @@ button {
 /* En la tarjeta, la fila va donde estaban las acciones y con su mismo margen. */
 .tarjeta .muestras-color {
   padding: 0.5rem 0.7rem 0.7rem;
-  border-top: 1px solid var(--materia-borde, var(--linea));
+  border-top: var(--borde) solid var(--materia-borde, var(--linea));
   margin-top: auto;
 }
 
@@ -397,7 +558,7 @@ button {
   gap: 0.9rem;
   padding: 0.6rem 1rem;
   background: var(--superficie);
-  border-bottom: 1px solid var(--linea);
+  border-bottom: var(--borde) solid var(--linea);
   flex: 0 0 auto;
   z-index: 5;
 }
@@ -407,7 +568,7 @@ button {
   align-items: center;
   gap: 0.3rem;
   background: none;
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   border-radius: var(--radio);
   padding: 0.35rem 0.7rem 0.35rem 0.5rem;
   font-size: 0.85rem;
@@ -455,7 +616,7 @@ button {
 
 .panel-ayuda {
   background: rgba(252, 250, 245, 0.9);
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   border-radius: 999px;
   padding: 0.3rem 0.8rem;
   font-size: 0.75rem;
@@ -473,7 +634,7 @@ button {
   padding: 0.25rem 0.6rem;
   border-radius: 999px;
   background: var(--superficie);
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   color: var(--tinta-suave);
 }
 
@@ -502,9 +663,9 @@ button {
   position: relative;
   width: 100%;
   height: 100%;
-  border: 1.5px solid;
+  border: var(--borde-elemento) solid;
   padding: 0.6rem 0.7rem;
-  line-height: 1.45;
+  line-height: var(--interlineado);
   overflow: hidden;
   display: flex;
   /* El borde arrastra, igual que el asa de arriba. El texto de dentro no. */
@@ -517,7 +678,7 @@ button {
 }
 
 .es-cuadro.seleccionado {
-  box-shadow: 0 0 0 2px var(--acento);
+  box-shadow: 0 0 0 var(--anillo-foco) var(--acento);
 }
 
 /*
@@ -529,11 +690,11 @@ button {
 .es-postit {
   border-radius: 2px;
   transform: rotate(-1.2deg);
-  box-shadow: 0 5px 14px rgba(44, 44, 42, 0.16), 0 1px 2px rgba(44, 44, 42, 0.1);
+  box-shadow: var(--sombra-postit);
 }
 
 .es-postit.seleccionado {
-  box-shadow: 0 0 0 2px var(--acento), 0 5px 14px rgba(44, 44, 42, 0.16);
+  box-shadow: 0 0 0 var(--anillo-foco) var(--acento), var(--sombra-postit);
 }
 
 /*
@@ -744,22 +905,26 @@ button {
 mark {
   /* Hay que anular el amarillo plano que los navegadores dan a <mark>. */
   background-color: transparent;
-  background-image: linear-gradient(transparent 22%, var(--trazo, rgba(250, 204, 21, 0.6)) 22%);
+  background-image: linear-gradient(
+    transparent var(--marcador-desde),
+    var(--trazo, var(--marcador-amarillo)) var(--marcador-desde)
+  );
   color: inherit;
   padding: 0 0.1em;
   border-radius: 2px;
 }
 
+/* Los tonos salen de tokens: el modo cómodo los sube de opacidad. */
 mark[data-color='amarillo'] {
-  --trazo: rgba(250, 204, 21, 0.6);
+  --trazo: var(--marcador-amarillo);
 }
 
 mark[data-color='verde'] {
-  --trazo: rgba(74, 222, 128, 0.55);
+  --trazo: var(--marcador-verde);
 }
 
 mark[data-color='rosa'] {
-  --trazo: rgba(244, 114, 182, 0.5);
+  --trazo: var(--marcador-rosa);
 }
 
 /* ---------- Formato dentro del texto (selección, no elemento) ---------- */
@@ -931,7 +1096,7 @@ mark[data-color='rosa'] {
 
 /* Al seleccionarla para borrarla, se ve que está seleccionada. */
 .nodo-editor img.ProseMirror-selectednode {
-  outline: 2px solid var(--acento);
+  outline: var(--anillo-foco) solid var(--acento);
   outline-offset: 1px;
 }
 
@@ -951,7 +1116,7 @@ mark[data-color='rosa'] {
   text-align: center;
   color: var(--error-tinta);
   background: rgba(246, 227, 223, 0.96);
-  border-top: 1px solid var(--error-borde);
+  border-top: var(--borde) solid var(--error-borde);
   border-radius: 0 0 var(--radio) var(--radio);
   pointer-events: none;
 }
@@ -960,7 +1125,7 @@ mark[data-color='rosa'] {
   width: 9px;
   height: 9px;
   background: var(--superficie);
-  border: 1.5px solid var(--tinta-tenue);
+  border: var(--borde-elemento) solid var(--tinta-tenue);
   opacity: 0;
   transition: opacity 0.12s;
 }
@@ -996,7 +1161,7 @@ mark[data-color='rosa'] {
   row-gap: 0.35rem;
   padding: 0.4rem 0.9rem;
   background: var(--superficie);
-  border-bottom: 1px solid var(--linea);
+  border-bottom: var(--borde) solid var(--linea);
   /* Por encima de los lienzos, que crean su propia pila de apilamiento. */
   z-index: 6;
 }
@@ -1059,12 +1224,12 @@ mark[data-color='rosa'] {
   width: 17px;
   height: 17px;
   border-radius: 50%;
-  border: 1.5px solid;
+  border: var(--borde-elemento) solid;
   padding: 0;
 }
 
 .muestra-color.activa {
-  box-shadow: 0 0 0 2px var(--acento);
+  box-shadow: 0 0 0 var(--anillo-foco) var(--acento);
 }
 
 /* Cuadrados y no redondos, para no confundirlos con los colores del cuadro. */
@@ -1072,7 +1237,7 @@ mark[data-color='rosa'] {
   width: 18px;
   height: 18px;
   border-radius: 3px;
-  border: 1.5px solid;
+  border: var(--borde-elemento) solid;
   padding: 0;
 }
 
@@ -1092,11 +1257,11 @@ mark[data-color='rosa'] {
 }
 
 .muestra-marcador.activa {
-  box-shadow: 0 0 0 2px var(--acento);
+  box-shadow: 0 0 0 var(--anillo-foco) var(--acento);
 }
 
 .selector-fuente {
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   border-radius: 6px;
   padding: 0.22rem 0.3rem;
   font-size: 0.75rem;
@@ -1184,7 +1349,7 @@ mark[data-color='rosa'] {
 .react-flow__minimap {
   border-radius: var(--radio);
   box-shadow: var(--sombra);
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   /* Por defecto ocupaba casi un cuarto de la pantalla en portátiles. */
   width: 150px !important;
   height: 105px !important;
@@ -1212,7 +1377,7 @@ mark[data-color='rosa'] {
   width: 100%;
   max-width: 26rem;
   background: var(--superficie);
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   border-radius: 14px;
   box-shadow: var(--sombra);
   padding: 1.75rem;
@@ -1246,14 +1411,14 @@ mark[data-color='rosa'] {
   font: inherit;
   font-size: 0.9rem;
   padding: 0.55rem 0.7rem;
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   border-radius: var(--radio);
   background: var(--superficie);
   color: var(--tinta);
 }
 
 .campo input:focus {
-  outline: 2px solid var(--acento);
+  outline: var(--anillo-foco) solid var(--acento);
   outline-offset: -1px;
   border-color: var(--acento);
 }
@@ -1262,7 +1427,7 @@ mark[data-color='rosa'] {
 .casilla small {
   color: var(--tinta-suave);
   font-size: 0.76rem;
-  line-height: 1.45;
+  line-height: var(--interlineado);
   display: block;
 }
 
@@ -1298,7 +1463,7 @@ mark[data-color='rosa'] {
 .error-acceso {
   margin: 0;
   background: var(--error-fondo);
-  border: 1px solid var(--error-borde);
+  border: var(--borde) solid var(--error-borde);
   color: var(--error-tinta);
   border-radius: var(--radio);
   padding: 0.55rem 0.7rem;
@@ -1356,7 +1521,7 @@ button[disabled] {
   font-weight: 650;
   padding: 0.28rem 0.6rem;
   border-radius: 999px;
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   background: var(--superficie-tenue);
   color: var(--tinta-suave);
   white-space: nowrap;
@@ -1429,7 +1594,7 @@ button[disabled] {
 .boton-peligro {
   background: var(--peligro);
   color: var(--fondo);
-  border: 1px solid transparent;
+  border: var(--borde) solid transparent;
   border-radius: var(--radio);
   font-weight: 600;
 }
@@ -1449,7 +1614,7 @@ button[disabled] {
   z-index: 20;
   width: 17rem;
   background: var(--superficie);
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   border-radius: var(--radio);
   box-shadow: var(--sombra);
   padding: 0.75rem;
@@ -1462,7 +1627,7 @@ button[disabled] {
   margin: 0;
   font-size: 0.8rem;
   color: var(--tinta-suave);
-  line-height: 1.45;
+  line-height: var(--interlineado);
 }
 
 .acciones-confirmar {
@@ -1494,7 +1659,7 @@ button[disabled] {
   align-items: center;
   gap: 1rem;
   padding: 0.9rem 1.2rem;
-  border-bottom: 1px solid var(--linea);
+  border-bottom: var(--borde) solid var(--linea);
   background: var(--superficie);
   position: sticky;
   top: 0;
@@ -1527,7 +1692,7 @@ button[disabled] {
 /* El botón que lleva a las flashcards desde el lienzo. */
 .boton-flashcards {
   border-radius: var(--radio);
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   padding: 0.5rem 0.9rem;
   font-weight: 600;
   font-size: 0.875rem;
@@ -1545,7 +1710,7 @@ button[disabled] {
 
 .panel-estudio {
   background: var(--superficie);
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   border-radius: 14px;
   padding: 1.2rem;
 }
@@ -1592,7 +1757,7 @@ button[disabled] {
   grid-template-columns: 1fr auto;
   gap: 0.3rem 1rem;
   align-items: center;
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   border-radius: var(--radio);
   padding: 0.85rem 1rem;
   transition: border-color 0.15s;
@@ -1655,7 +1820,7 @@ button[disabled] {
   align-items: center;
   gap: 0.8rem;
   flex-wrap: wrap;
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   border-radius: var(--radio);
   padding: 0.7rem 0.9rem;
 }
@@ -1694,7 +1859,7 @@ button[disabled] {
   flex-direction: column;
   gap: 0.9rem;
   background: var(--superficie-clara);
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   border-radius: var(--radio);
   padding: 1rem;
   margin-bottom: 1.1rem;
@@ -1716,7 +1881,7 @@ button[disabled] {
 
 .campo-tarjeta-caja {
   background: var(--superficie);
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   border-radius: var(--radio);
   padding: 0.6rem 0.75rem;
   min-height: 4.5rem;
@@ -1798,7 +1963,7 @@ button[disabled] {
   text-align: center;
   padding: 2rem 1.6rem;
   overflow: auto;
-  border: 1.5px solid;
+  border: var(--borde-elemento) solid;
   border-radius: 16px;
   box-shadow: var(--sombra);
 }
@@ -1833,7 +1998,7 @@ button[disabled] {
 .cara .texto-con-formato {
   font-family: 'Fraunces Variable', ui-serif, Georgia, serif;
   font-size: 1.4rem;
-  line-height: 1.4;
+  line-height: var(--interlineado-tarjeta);
   width: 100%;
   /* La regla general lo estira al 100%; aquí debe centrarse verticalmente. */
   height: auto;
@@ -1880,7 +2045,7 @@ button[disabled] {
   font-size: 0.7rem;
   font-weight: 600;
   opacity: 0.75;
-  border: 1px solid currentColor;
+  border: var(--borde) solid currentColor;
   border-radius: 4px;
   padding: 0.05rem 0.3rem;
 }
@@ -1904,7 +2069,7 @@ button[disabled] {
   gap: 0.15rem;
   padding: 0.7rem 0.5rem;
   border-radius: var(--radio);
-  border: 1.5px solid var(--linea);
+  border: var(--borde-elemento) solid var(--linea);
   background: var(--superficie);
   color: var(--tinta);
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
@@ -2094,8 +2259,8 @@ button[disabled] {
  */
 .agenda-caja {
   background: var(--aviso-fondo);
-  border: 1px solid var(--aviso-borde);
-  border-left: 3px solid var(--aviso-acento);
+  border: var(--borde) solid var(--aviso-borde);
+  border-left: var(--franja) solid var(--aviso-acento);
   border-radius: 0 14px 14px 0;
   overflow: hidden;
 }
@@ -2112,7 +2277,7 @@ button[disabled] {
   gap: 0.7rem;
   padding: 0.6rem 0.9rem;
   /* Divisores de la familia del bloque: en gris se veían como una rejilla ajena. */
-  border-bottom: 1px solid var(--aviso-borde);
+  border-bottom: var(--borde) solid var(--aviso-borde);
 }
 
 .fila-tarea:last-child {
@@ -2190,7 +2355,7 @@ button[disabled] {
 }
 
 .entrada-fecha {
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   border-radius: var(--radio);
   padding: 0.4rem 0.5rem;
   font: inherit;
@@ -2210,7 +2375,7 @@ button[disabled] {
   gap: 0.5rem;
   flex-wrap: wrap;
   padding: 0.5rem 0.7rem;
-  border-top: 1px solid var(--aviso-borde);
+  border-top: var(--borde) solid var(--aviso-borde);
   background: #f6e3c6;
 }
 
@@ -2300,7 +2465,7 @@ button[disabled] {
   display: flex;
   flex-direction: column;
   background: var(--superficie-tenue);
-  border-right: 1px solid var(--linea);
+  border-right: var(--borde) solid var(--linea);
   overflow-y: auto;
 }
 
@@ -2327,7 +2492,7 @@ button[disabled] {
 }
 
 .boton-nueva-clase {
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   border-radius: 7px;
   background: var(--superficie);
   color: var(--acento);
@@ -2368,7 +2533,7 @@ button[disabled] {
  */
 .fila-clase.activa {
   background: var(--superficie-hover);
-  box-shadow: inset 3px 0 0 var(--acento);
+  box-shadow: inset var(--franja) 0 0 var(--acento);
 }
 
 .clase-enlace {
@@ -2428,7 +2593,7 @@ button[disabled] {
   flex-direction: column;
   gap: 0.4rem;
   padding: 0.5rem 0.7rem 0.7rem;
-  border-bottom: 1px solid var(--linea);
+  border-bottom: var(--borde) solid var(--linea);
 }
 
 .crear-clase .entrada-nombre,
@@ -2475,7 +2640,7 @@ button[disabled] {
   text-transform: uppercase;
   color: var(--tinta-suave);
   background: var(--superficie-tenue);
-  border-bottom: 1px solid var(--linea);
+  border-bottom: var(--borde) solid var(--linea);
   flex: 0 0 auto;
   /* Un nombre de clase largo no debe romper el alto de la cabecera. */
   overflow: hidden;
@@ -2484,7 +2649,7 @@ button[disabled] {
 }
 
 .cuerpo-apuntes.partida .panel-hoja {
-  border-left: 1px solid var(--linea);
+  border-left: var(--borde) solid var(--linea);
 }
 
 /* ---------- La hoja ---------- */
@@ -2512,7 +2677,7 @@ button[disabled] {
   max-width: 46rem;
   margin: 0 auto;
   background: var(--superficie);
-  border: 1px solid var(--linea);
+  border: var(--borde) solid var(--linea);
   border-radius: var(--radio);
   box-shadow: 0 1px 2px rgba(44, 44, 42, 0.04);
   padding: 2.2rem 2.6rem;
@@ -2523,7 +2688,7 @@ button[disabled] {
   margin: 0 0 1.1rem;
   font-size: 0.8rem;
   color: var(--tinta-suave);
-  border-bottom: 1px solid var(--linea);
+  border-bottom: var(--borde) solid var(--linea);
   padding-bottom: 0.5rem;
 }
 
@@ -2534,7 +2699,7 @@ button[disabled] {
 .hoja-editor {
   outline: none;
   font-size: 1rem;
-  line-height: 1.65;
+  line-height: var(--interlineado-hoja);
   color: var(--tinta);
   /* Que siempre haya sitio donde pulsar para poner el cursor. */
   min-height: 55vh;
@@ -2616,7 +2781,7 @@ button[disabled] {
 }
 
 .hoja-editor img.ProseMirror-selectednode {
-  outline: 2px solid var(--acento);
+  outline: var(--anillo-foco) solid var(--acento);
   outline-offset: 1px;
 }
 
@@ -2706,6 +2871,192 @@ body.arrastrando-divisor {
   font-weight: 600;
   color: var(--error-tinta);
   background: var(--error-fondo);
-  border-bottom: 1px solid var(--error-borde);
+  border-bottom: var(--borde) solid var(--error-borde);
   flex: 0 0 auto;
+}
+
+
+
+/* =========================================================================
+   Ajustes propios del modo cómodo
+   =========================================================================
+   Lo que no se puede expresar solo cambiando un token: refuerzos que no
+   dependen del color, y cosas que en una pantalla mala estorban más que ayudan.
+   ========================================================================= */
+
+/* ---------- El interruptor de modo ---------- */
+
+.boton-modo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: var(--borde) solid var(--linea);
+  border-radius: 999px;
+  background: var(--superficie);
+  color: var(--tinta-suave);
+  font-size: 0.74rem;
+  font-weight: 650;
+  padding: 0.26rem 0.7rem 0.26rem 0.6rem;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.boton-modo:hover {
+  border-color: var(--linea-fuerte);
+  background: var(--superficie-clara);
+  color: var(--tinta);
+}
+
+/* Con el modo cómodo puesto, el propio botón lo enseña. */
+.boton-modo.es-comodo {
+  background: var(--acento-suave);
+  border-color: var(--acento-borde);
+  color: var(--acento);
+}
+
+/* ---------- Señales que no dependen del color ---------- */
+
+/*
+ * Cada familia semántica lleva su forma, además del tinte.
+ *
+ * Es el punto de "no fiarse solo del color": si el panel lava los tonos hasta
+ * que el verde y el ámbar se parecen, la forma sigue diciendo cuál es cuál.
+ *
+ * Y son formas dibujadas con CSS, no caracteres. Con glifos (✓ ⟳ ✕) se veían
+ * cuadros vacíos: medido en la pila de fuentes de la app, U+2713, U+27F3 y U+2715
+ * no están, y solo Latin-1 se puede dar por seguro. Es el mismo motivo por el que
+ * la flecha de "volver" es un SVG y no un '←'. En un modo pensado justamente para
+ * máquinas viejas, apostar a que una fuente traiga dingbats es lo último que
+ * conviene hacer, así que aquí no hay ninguna fuente de por medio.
+ *
+ * Cuatro siluetas distintas: círculo lleno, triángulo, anillo y equis.
+ */
+[data-modo='comodo'] .pastilla-ok::before,
+[data-modo='comodo'] .pastilla-aviso::before,
+[data-modo='comodo'] .pastilla-trabajando::before,
+[data-modo='comodo'] .pastilla-error::before,
+[data-modo='comodo'] .estado-guardado.estado-guardado::before,
+[data-modo='comodo'] .estado-guardado.estado-guardando::before,
+[data-modo='comodo'] .estado-guardado.estado-error::before {
+  content: '';
+  display: inline-block;
+  width: 0.6em;
+  height: 0.6em;
+  margin-right: 0.4em;
+  /* Centrada con el texto sin depender de la línea base de ninguna fuente. */
+  vertical-align: -0.02em;
+  background: currentColor;
+}
+
+/* Guardado: círculo lleno. */
+[data-modo='comodo'] .pastilla-ok::before,
+[data-modo='comodo'] .estado-guardado.estado-guardado::before {
+  border-radius: 50%;
+}
+
+/* Pendiente: triángulo, la forma de aviso que todo el mundo reconoce. */
+[data-modo='comodo'] .pastilla-aviso::before,
+[data-modo='comodo'] .estado-guardado.estado-guardando::before {
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+/* Trabajando: anillo, que se lee como algo en curso. */
+[data-modo='comodo'] .pastilla-trabajando::before {
+  background: none;
+  border: 0.17em solid currentColor;
+  border-radius: 50%;
+}
+
+/* Error: una equis de verdad, recortada del cuadrado. */
+[data-modo='comodo'] .pastilla-error::before,
+[data-modo='comodo'] .estado-guardado.estado-error::before {
+  clip-path: polygon(
+    20% 0%,
+    50% 30%,
+    80% 0%,
+    100% 20%,
+    70% 50%,
+    100% 80%,
+    80% 100%,
+    50% 70%,
+    20% 100%,
+    0% 80%,
+    30% 50%,
+    0% 20%
+  );
+}
+
+/* La clase abierta se marca también con el peso, no solo con la franja y el fondo. */
+[data-modo='comodo'] .fila-clase.activa .clase-nombre {
+  font-weight: 750;
+}
+
+/* Los cuatro botones de repaso ya se distinguen por su nombre y su número de
+   atajo; lo único que les falta en una pantalla mala es que el borde se vea. */
+[data-modo='comodo'] .boton-respuesta {
+  border-width: var(--borde);
+}
+
+/* ---------- Controles apagados, legibles ---------- */
+
+/*
+ * A 0.38 de opacidad un control apagado es casi invisible, y desde que la fila
+ * del cuadro está siempre presente hay varios apagados a la vez en la barra: en
+ * un panel pobre no se llega a leer qué dicen. A 0.6 se leen sin dejar de
+ * parecer inactivos.
+ */
+[data-modo='comodo'] .barra-formato button:disabled,
+[data-modo='comodo'] .barra-formato select:disabled {
+  opacity: 0.6;
+}
+
+/* ---------- Nada escondido tras el ratón ---------- */
+
+/*
+ * Las acciones de cada tarea, los puntos de conexión de los cuadros y la marca
+ * del asa de mover están a opacidad cero hasta que te acercas. Un control
+ * invisible en una pantalla en la que ya cuesta ver es incómodo dos veces, así
+ * que aquí se quedan a la vista.
+ */
+[data-modo='comodo'] .acciones-tarea,
+[data-modo='comodo'] .punto-conexion,
+[data-modo='comodo'] .asa-mover::before {
+  opacity: 1;
+}
+
+/* Al pasar por encima siguen destacando, para no perder el aviso de "esto se usa". */
+[data-modo='comodo'] .react-flow__node:hover .asa-mover::before,
+[data-modo='comodo'] .react-flow__node.selected .asa-mover::before {
+  opacity: 0.5;
+}
+
+/* ---------- Sin cursivas en los textos de ayuda ---------- */
+
+/*
+ * La cursiva a baja resolución se empasta: los trazos inclinados caen entre
+ * píxeles y las letras se pegan. En los textos de ayuda y los estados vacíos no
+ * aporta nada que compense eso, así que pasan a redonda.
+ */
+[data-modo='comodo'] .nodo-vacio,
+[data-modo='comodo'] .extracto-vacio,
+[data-modo='comodo'] .cara-vacia,
+[data-modo='comodo'] .nodo-editor p.is-editor-empty:first-child::before,
+[data-modo='comodo'] .hoja-editor p.is-editor-empty:first-child::before {
+  font-style: normal;
+}
+
+/* ---------- Letra pequeña algo más suelta ---------- */
+
+/*
+ * Un pelín de espacio entre letras solo donde el cuerpo es pequeño. En estas
+ * pantallas las letras de un texto de 0.7rem tienden a tocarse.
+ */
+[data-modo='comodo'] .pastilla,
+[data-modo='comodo'] .tarjeta-meta,
+[data-modo='comodo'] .clase-meta,
+[data-modo='comodo'] .nota-tarea,
+[data-modo='comodo'] .etiqueta-grupo,
+[data-modo='comodo'] .titulo-panel,
+[data-modo='comodo'] .respuesta-plazo {
+  letter-spacing: 0.01em;
 }
