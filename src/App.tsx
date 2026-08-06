@@ -123,8 +123,17 @@ export default function App() {
     )
   }
 
-  const barra = (
+  /*
+   * 'enInicio' distingue la barra del selector de materias de la que va en la
+   * barra superior de las pantallas de trabajo.
+   *
+   * Solo la del selector muestra la recuperación de credenciales: es un botón que
+   * aparece y desaparece con el estado de la nube, y dentro de una materia eso
+   * queda en el borde de donde tienes la vista puesta mientras escribes.
+   */
+  const construirBarra = (enInicio: boolean) => (
     <BarraNube
+      enInicio={enInicio}
       estadoSesion={nube.estadoSesion}
       estadoNube={nube.estadoNube}
       mensaje={nube.mensaje}
@@ -136,6 +145,8 @@ export default function App() {
       onUsarOtroToken={nube.olvidarCredencialGuardada}
     />
   )
+
+  const barra = construirBarra(false)
 
   if (ruta.tipo === 'agenda') {
     return (
@@ -190,7 +201,7 @@ export default function App() {
   return (
     <SelectorCuadernos
       cuadernos={cuadernos}
-      barraNube={barra}
+      barraNube={construirBarra(true)}
       agenda={
         <PanelAgenda
           tareas={agenda.tareas}
