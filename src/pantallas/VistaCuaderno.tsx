@@ -88,7 +88,7 @@ export function VistaCuaderno({ cuaderno, barraNube, onActividad }: Props) {
 
       {/* Anclada aquí, y no flotando sobre el lienzo: actúa sobre el cuadro
           seleccionado o sobre el texto que se esté escribiendo. */}
-      <BarraFormato />
+      <BarraFormato conElementos />
 
       {error ? (
         <p className="vacio">{error}</p>

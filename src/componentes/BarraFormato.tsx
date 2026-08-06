@@ -5,6 +5,7 @@ import {
   ALINEACIONES_TEXTO,
   CLAVES_COLOR,
   FUENTES,
+  FUENTE_POR_DEFECTO,
   MARCADORES,
   PALETA,
   TAMANOS,
@@ -124,8 +125,14 @@ function useRepintarConElEditor(editor: Editor | null): void {
  *
  * Los controles que no aplican no se esconden, se deshabilitan: una barra que
  * cambia de tamaño según dónde tengas el cursor es imposible de aprender.
+ *
+ * 'conElementos' dice si esta pantalla tiene lienzo, y por tanto si hay que
+ * reservar la fila de ajustes del cuadro. Se reserva en la vista de la materia y
+ * en la pantalla partida de Estudio Activo; en las flashcards no, porque allí no
+ * hay ningún cuadro que seleccionar y la fila se quedaría apagada para siempre
+ * gastando una línea de alto.
  */
-export function BarraFormato() {
+export function BarraFormato({ conElementos = false }: { conElementos?: boolean }) {
   const { editor: registrado, pedirImagen, elemento, historial } = useFormato()
   useRepintarConElEditor(registrado)
 
@@ -428,32 +435,48 @@ export function BarraFormato() {
       </div>
 
       {/* ---- Ajustes del cuadro seleccionado del mapa ---- */}
-      {hayElemento && elemento && (
+      {/*
+        Esta fila se reserva siempre en las pantallas que tienen lienzo, y sus
+        controles se apagan cuando no hay nada seleccionado.
+    
+        Antes aparecía y desaparecía según hubiera cuadro seleccionado, y como la
+        barra se pliega en varias líneas, cada vez que se creaba o se elegía un
+        cuadro la barra crecía una línea y empujaba el lienzo hacia abajo: lo que
+        estabas mirando se movía justo en el momento de ir a tocarlo. Es la misma
+        razón por la que el resto de la barra apaga sus controles en lugar de
+        esconderlos (ver '.barra-formato button:disabled' en el CSS); esta fila era
+        la única que se salía de esa norma.
+      */}
+      {conElementos && (
         <>
           <span className="separador-barra separador-fuerte" />
 
-          <div className="grupo-formato grupo-elemento">
-            <span className="etiqueta-grupo">{elemento.esPostit ? 'Post-it' : 'Cuadro'}</span>
+          {/* 'inactivo' y no 'vacio': '.vacio' es el estado de "no hay materias" y
+              trae su propio relleno y tamaño de letra. */}
+          <div className={`grupo-formato grupo-elemento${hayElemento ? '' : ' inactivo'}`}>
+            <span className="etiqueta-grupo">{elemento?.esPostit ? 'Post-it' : 'Cuadro'}</span>
 
             {CLAVES_COLOR.map((clave) => (
               <button
                 key={clave}
                 type="button"
-                className={`muestra-color${elemento.color === clave ? ' activa' : ''}`}
+                className={`muestra-color${elemento?.color === clave ? ' activa' : ''}`}
                 style={{ background: PALETA[clave].fondo, borderColor: PALETA[clave].borde }}
                 title={PALETA[clave].nombre}
                 aria-label={`Color ${PALETA[clave].nombre}`}
+                disabled={!elemento}
                 onMouseDown={noRobarFoco}
-                onClick={() => elemento.onCambiar({ color: clave })}
+                onClick={() => elemento?.onCambiar({ color: clave })}
               />
             ))}
 
             <select
-              className={`selector-fuente fuente-${elemento.fuente}`}
-              value={elemento.fuente}
+              className={`selector-fuente fuente-${elemento?.fuente ?? FUENTE_POR_DEFECTO}`}
+              value={elemento?.fuente ?? FUENTE_POR_DEFECTO}
               title="Tipografía de todo el cuadro"
               aria-label="Tipografía de todo el cuadro"
-              onChange={(evento) => elemento.onCambiar({ fuente: evento.target.value as Fuente })}
+              disabled={!elemento}
+              onChange={(evento) => elemento?.onCambiar({ fuente: evento.target.value as Fuente })}
             >
               {CLAVES_FUENTE.map((clave) => (
                 <option key={clave} value={clave}>
@@ -467,13 +490,14 @@ export function BarraFormato() {
                 key={clave}
                 type="button"
                 className={`boton-barra boton-tamano es-${clave}${
-                  elemento.tamano === clave ? ' activo' : ''
+                  elemento?.tamano === clave ? ' activo' : ''
                 }`}
                 title={`Tamaño del cuadro: ${TAMANOS[clave].nombre}`}
                 aria-label={`Tamaño del cuadro ${TAMANOS[clave].nombre}`}
-                aria-pressed={elemento.tamano === clave}
+                aria-pressed={elemento?.tamano === clave}
+                disabled={!elemento}
                 onMouseDown={noRobarFoco}
-                onClick={() => elemento.onCambiar({ tamano: clave })}
+                onClick={() => elemento?.onCambiar({ tamano: clave })}
               >
                 {TAMANOS[clave].abreviatura}
               </button>
@@ -482,9 +506,10 @@ export function BarraFormato() {
             <button
               type="button"
               className="boton-barra peligro"
-              title={`Eliminar este ${elemento.esPostit ? 'post-it' : 'cuadro'}`}
+              title={`Eliminar este ${elemento?.esPostit ? 'post-it' : 'cuadro'}`}
+              disabled={!elemento}
               onMouseDown={noRobarFoco}
-              onClick={elemento.onEliminar}
+              onClick={() => elemento?.onEliminar()}
             >
               Eliminar
             </button>

@@ -141,3 +141,6 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Salida del banco de pruebas del lienzo (ver pruebas/)
+dist-pruebas

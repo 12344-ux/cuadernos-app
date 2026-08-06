@@ -366,7 +366,8 @@ export function SeccionEstudioActivo({
        * la hoja se anuncian al recibir el foco y ella actúa sobre el que estés usando.
        * Con una barra por panel habría dos juegos de controles compitiendo.
        */}
-      <BarraFormato />
+      {/* La fila del cuadro solo hace falta cuando el mapa está en pantalla. */}
+      <BarraFormato conElementos={partida} />
 
       <div
         className={`cuerpo-apuntes${partida ? ' partida' : ''}`}

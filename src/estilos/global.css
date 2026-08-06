@@ -507,6 +507,8 @@ button {
   line-height: 1.45;
   overflow: hidden;
   display: flex;
+  /* El borde arrastra, igual que el asa de arriba. El texto de dentro no. */
+  cursor: grab;
 }
 
 .es-cuadro {
@@ -556,14 +558,82 @@ button {
   pointer-events: none;
 }
 
+/*
+ * El texto se selecciona; el cuadro se mueve desde el asa o desde el borde.
+ *
+ * React Flow pone 'cursor: grab' en todo el nodo y 'user-select: none', así que
+ * encima de un cuadro salía la mano y el texto no se podía seleccionar: había que
+ * entrar a editar para poder marcar una palabra, y ni ahí se veía, porque la mano
+ * seguía puesta. Aquí se recupera la barrita de texto y la selección, y la mano
+ * queda para el asa y el borde, que es lo que de verdad arrastra.
+ */
+.nodo-contenido,
+.nodo-editor {
+  cursor: text;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 .nodo-contenido {
   width: 100%;
   overflow: hidden;
 }
 
+/*
+ * Un cuadro vacío no tiene texto que seleccionar: se arrastra desde cualquier parte.
+ *
+ * La clase se llama 'sin-texto' y no 'vacio' porque '.vacio' ya existe: es el estado
+ * de "no hay materias" y lleva 'padding: 2rem 1.5rem'. Llamándola igual, el texto de
+ * "Doble clic para escribir" se hundía 32 px y se salía del cuadro.
+ */
+.nodo-contenido.sin-texto {
+  cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 .nodo-vacio {
   color: var(--tinta-suave);
   font-style: italic;
+}
+
+/*
+ * El asa de mover: una franja del ancho del cuadro sobre su relleno superior.
+ *
+ * Es estrecha (el alto del relleno, para no tapar el texto) pero ocupa todo el
+ * ancho, así que es fácil de acertar sin apuntar. La marca aparece al acercarse o
+ * con el cuadro seleccionado; en reposo no se dibuja nada.
+ */
+.asa-mover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+}
+
+.asa-mover::before {
+  content: '';
+  width: 26px;
+  height: 3px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.react-flow__node:hover .asa-mover::before,
+.react-flow__node.selected .asa-mover::before {
+  opacity: 0.28;
+}
+
+.react-flow__node.dragging .elemento-lienzo,
+.react-flow__node.dragging .asa-mover {
+  cursor: grabbing;
 }
 
 /* ---------- Tipografía, tamaño y alineación por elemento ---------- */
@@ -975,6 +1045,14 @@ mark[data-color='rosa'] {
   padding: 0.15rem 0.4rem;
   border-radius: 7px;
   background: var(--acento-suave);
+}
+
+/*
+ * Sin nada seleccionado el grupo sigue ahí, guardando su sitio, pero en neutro: con
+ * el tinte de acento puesto siempre parecería que hay un cuadro esperando órdenes.
+ */
+.grupo-elemento.inactivo {
+  background: var(--superficie-tenue);
 }
 
 .muestra-color {
