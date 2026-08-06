@@ -595,6 +595,15 @@ button {
   font-size: 1rem;
   font-weight: 650;
   color: var(--materia-texto, var(--tinta));
+  /*
+   * Un nombre de materia largo se recorta en lugar de empujar la barra de la nube
+   * fuera de la línea. Es la otra mitad de mantener el alto estable: si el título
+   * pudiera crecer sin límite, la fila volvería a no caber.
+   */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .lienzo {
@@ -1504,6 +1513,51 @@ button[disabled] {
   gap: 0.4rem;
   flex-wrap: wrap;
   position: relative;
+}
+
+/*
+ * En la barra superior esta fila no se parte nunca.
+ *
+ * El número de botones cambia con el estado de la nube: al fallar una subida
+ * aparece "Usar otro token" y, con el mensaje de error ocupando lo suyo, la fila
+ * se partía en dos. Como la barra superior está en el flujo, crecer una línea
+ * empujaba hacia abajo la hoja o el lienzo justo mientras se escribía.
+ *
+ * Así que aquí manda el alto: la fila se queda en una línea y lo que cede es la
+ * pastilla, que se recorta con puntos suspensivos. El mensaje completo no se
+ * pierde, sigue en su 'title'.
+ */
+.barra-superior .barra-nube {
+  flex-wrap: nowrap;
+  /* Sin esto un hijo flexible no puede encogerse por debajo de su contenido. */
+  min-width: 0;
+}
+
+/* Los botones no se deforman: el que cede es el texto de la pastilla. */
+.barra-superior .barra-nube > button {
+  flex: 0 0 auto;
+}
+
+.barra-superior .barra-nube > .pastilla {
+  flex: 0 1 auto;
+  min-width: 0;
+  /*
+   * Más corta que en el selector. Aquí comparte línea con el título de la materia
+   * y con hasta cuatro botones, y a 22rem se comía el sitio de todos.
+   */
+  max-width: 16rem;
+}
+
+/*
+ * Por debajo de este ancho no hay forma de que la fila entre en una línea, ni
+ * recortando la pastilla a cero. Ahí se prefiere que se parta antes que dejar
+ * botones cortados por el canto de la pantalla: un botón invisible es peor que
+ * una barra alta, y en una ventana tan estrecha ya no se está escribiendo a gusto.
+ */
+@media (max-width: 60rem) {
+  .barra-superior .barra-nube {
+    flex-wrap: wrap;
+  }
 }
 
 .selector .barra-nube {
@@ -2864,15 +2918,37 @@ body.arrastrando-divisor {
  * Va encima del texto, no en su lugar: quitar el editor de la pantalla en el momento
  * en que falla el guardado se llevaría por delante lo que aún no está en disco.
  */
+/*
+ * Va flotando sobre la hoja, no dentro de la columna.
+ *
+ * El comentario de arriba ya decía "encima del texto, no en su lugar", pero con
+ * 'flex: 0 0 auto' estaba en el flujo: al fallar un guardado aparecía una franja
+ * de unos treinta píxeles y toda la hoja bajaba de golpe, con el cursor dentro. Es
+ * el mismo problema que tenía la barra de la nube al partirse en dos.
+ *
+ * Anclado abajo y centrado, como un aviso emergente. Abajo y no arriba porque la
+ * hoja se escribe de arriba hacia abajo y tiene 45vh de aire al final: ahí es
+ * donde menos probable es que tape algo que se esté mirando.
+ */
 .aviso-guardado {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  max-width: min(32rem, 90%);
   margin: 0;
   padding: 0.45rem 0.9rem;
   font-size: 0.8rem;
   font-weight: 600;
+  text-align: center;
   color: var(--error-tinta);
   background: var(--error-fondo);
-  border-bottom: var(--borde) solid var(--error-borde);
-  flex: 0 0 auto;
+  border: var(--borde) solid var(--error-borde);
+  border-radius: var(--radio);
+  /* Sombra propia y no var(--sombra): en modo cómodo esa vale 'none', y este
+     aviso está flotando sobre texto, así que necesita despegarse del fondo. */
+  box-shadow: 0 2px 10px rgba(44, 44, 42, 0.22);
 }
 
 
