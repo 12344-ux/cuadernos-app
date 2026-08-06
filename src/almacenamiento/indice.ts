@@ -41,6 +41,18 @@ export function normalizarIndice(datos: unknown): IndiceCuadernos {
     version: VERSION_INDICE,
     ultimoCuaderno: entrada.ultimoCuaderno ?? null,
     actualizado: Number(entrada.actualizado) || 0,
+    /*
+     * La fecha de la agenda hay que conservarla aquí explícitamente.
+     *
+     * Esta función reconstruye el índice campo por campo, y al no estar en la
+     * lista la fecha se perdía en cada lectura: se escribía en localStorage y en
+     * el archivo remoto, pero volvía como 'undefined' tanto al recargar la página
+     * como al interpretar el índice de la nube. Con las dos fechas siempre a cero,
+     * la comparación de recencia de la agenda nunca se cumplía y la agenda no se
+     * bajaba jamás: las tareas apuntadas en un dispositivo no llegaban a los
+     * demás, y encima cada sincronización sobrescribía la fecha remota con cero.
+     */
+    agendaModificado: Number(entrada.agendaModificado) || 0,
     cuadernos: entrada.cuadernos.map(
       (c): Cuaderno => ({
         id: String(c.id),
