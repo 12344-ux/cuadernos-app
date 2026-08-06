@@ -12,7 +12,7 @@ import { PanelClases } from '../componentes/PanelClases'
 import { diaCompletoLegible } from '../fechas'
 import { useClases } from '../hooks/useClases'
 import { irALaClase, irAlCuaderno, irAlEstudioActivo } from '../hooks/useRuta'
-import type { Cuaderno, DocumentoCuaderno } from '../tipos'
+import type { Cuaderno, DocumentoCuaderno, EstadoGuardado } from '../tipos'
 
 /*
  * La proporción del divisor es preferencia de esta pantalla, no contenido.
@@ -41,6 +41,13 @@ const ANCHO_MINIMO_PARTIDA = 900
 
 /** Espera antes de guardar lo escrito, para no escribir en disco en cada tecla. */
 const RETARDO_GUARDADO = 700
+
+const ETIQUETA_GUARDADO: Record<EstadoGuardado, string> = {
+  inactivo: 'Sin cambios',
+  guardando: 'Guardando…',
+  guardado: 'Guardado',
+  error: 'Error al guardar',
+}
 
 function leerDivision(): number {
   const guardada = Number(localStorage.getItem(CLAVE_DIVISION))
@@ -78,6 +85,14 @@ type Props = {
   /** Cambió el mapa desde la vista partida. */
   onActividadMapa: (idCuaderno: string, numIdeas: number) => void
   barraNube?: ReactNode
+  /**
+   * Marca de la última sincronización.
+   *
+   * Cada vez que cambia se comprueba si la hoja abierta quedó atrás. Sin esto, si la
+   * fusión traía una versión más reciente de otro dispositivo, el editor seguía
+   * mostrando la anterior y la siguiente tecla la subía encima.
+   */
+  selloSincronizacion?: number | null
 }
 
 /**
@@ -95,6 +110,7 @@ export function SeccionEstudioActivo({
   onActividadApuntes,
   onActividadMapa,
   barraNube,
+  selloSincronizacion,
 }: Props) {
   const alCambiarLista = useCallback(
     () => onActividadClases(cuaderno.id),
@@ -113,6 +129,13 @@ export function SeccionEstudioActivo({
     null
 
   const [apunte, setApunte] = useState<Apunte | null>(null)
+  const [estadoGuardado, setEstadoGuardado] = useState<EstadoGuardado>('inactivo')
+  /*
+   * Sube cuando se adopta contenido llegado de otro dispositivo. Forma parte de la
+   * clave del editor: es lo que lo obliga a remontarse con el texto nuevo, porque
+   * Tiptap fija su contenido al crearse y no lo relee.
+   */
+  const [selloContenido, setSelloContenido] = useState(0)
   const [errorApunte, setErrorApunte] = useState<string | null>(null)
   /*
    * El fallo al guardar va aparte del fallo al cargar. Con uno solo, un error de cuota
@@ -153,10 +176,14 @@ export function SeccionEstudioActivo({
     let activo = true
     setApunte(null)
     setErrorApunte(null)
+    setEstadoGuardado('inactivo')
+    escritoRef.current = 0
 
     cargarApunte(idClase)
       .then((cargado) => {
-        if (activo) setApunte(cargado)
+        if (!activo) return
+        escritoRef.current = cargado.escrito
+        setApunte(cargado)
       })
       .catch((causa) => {
         console.error('No se pudieron cargar los apuntes', causa)
@@ -204,15 +231,28 @@ export function SeccionEstudioActivo({
    */
   const borradorRef = useRef<string | null>(null)
   const temporizadorRef = useRef<number | null>(null)
+  /**
+   * La escritura más reciente que conocemos de esta hoja, propia o ajena.
+   *
+   * Sirve para dos cosas: distinguir si lo que hay en disco tras sincronizar viene de
+   * otro dispositivo o es lo que acabamos de guardar, y no quedarse nunca por detrás
+   * al fechar un guardado.
+   */
+  const escritoRef = useRef(0)
 
   const guardarAhora = useCallback(
     (idDeLaClase: string, contenido: string) => {
-      const apunteNuevo: Apunte = {
-        version: VERSION_APUNTE,
-        contenido,
-        // Es la fecha que decide quién gana al sincronizar entre dispositivos.
-        escrito: Date.now(),
-      }
+      /*
+       * La fecha decide quién gana al sincronizar, y se fuerza a superar la última que
+       * conocemos. Con 'Date.now()' a secas, un dispositivo con el reloj atrasado
+       * perdía siempre: escribía encima de lo ajeno con una fecha menor y su propio
+       * texto volvía a quedar descartado en la siguiente fusión.
+       */
+      const escrito = Math.max(Date.now(), escritoRef.current + 1)
+      escritoRef.current = escrito
+
+      const apunteNuevo: Apunte = { version: VERSION_APUNTE, contenido, escrito }
+      setEstadoGuardado('guardando')
 
       /*
        * Se anuncia antes de esperar la escritura, no en el '.then()'.
@@ -228,10 +268,14 @@ export function SeccionEstudioActivo({
       onActividadApuntes(idDeLaClase)
 
       void guardarApunte(idDeLaClase, apunteNuevo)
-        .then(() => setErrorGuardado(null))
+        .then(() => {
+          setErrorGuardado(null)
+          setEstadoGuardado('guardado')
+        })
         .catch((causa) => {
           console.error('No se pudieron guardar los apuntes', causa)
           setErrorGuardado('No se pudo guardar. Revisa el espacio del navegador.')
+          setEstadoGuardado('error')
         })
     },
     [marcarApuntes, onActividadApuntes],
@@ -276,6 +320,43 @@ export function SeccionEstudioActivo({
       volcarPendiente()
     }
   }, [volcarPendiente])
+
+  /*
+   * Tras cada sincronización se comprueba si la hoja abierta quedó atrás.
+   *
+   * La sincronización escribe en IndexedDB, pero el editor fija su contenido al
+   * crearse: si la fusión daba por ganadora la versión de otro dispositivo, aquí
+   * seguía viéndose la anterior y la siguiente tecla la subía encima. Solo se adopta
+   * si lo que hay en disco es más reciente que la última escritura que conocemos, que
+   * es como se distingue el trabajo ajeno del que acabamos de guardar nosotros.
+   */
+  useEffect(() => {
+    if (!idClase || !selloSincronizacion) return
+
+    let activo = true
+    cargarApunte(idClase)
+      .then((cargado) => {
+        if (!activo || cargado.escrito <= escritoRef.current) return
+
+        // Lo que hubiera a medio escribir ya ha perdido: se descarta para que el
+        // volcado pendiente no vuelva a subirlo por encima de lo que acaba de llegar.
+        if (temporizadorRef.current) {
+          window.clearTimeout(temporizadorRef.current)
+          temporizadorRef.current = null
+        }
+        borradorRef.current = null
+
+        escritoRef.current = cargado.escrito
+        setApunte(cargado)
+        setEstadoGuardado('inactivo')
+        setSelloContenido((sello) => sello + 1)
+      })
+      .catch((causa) => console.error('No se pudieron releer los apuntes', causa))
+
+    return () => {
+      activo = false
+    }
+  }, [selloSincronizacion, idClase])
 
   const cambiarFraccion = useCallback((nueva: number) => {
     setFraccion(nueva)
@@ -427,13 +508,42 @@ export function SeccionEstudioActivo({
         )}
 
         <section className="panel-hoja">
-          {partida && claseAbierta && <p className="titulo-panel">{claseAbierta.nombre}</p>}
+          {/*
+           * En pantalla partida no está la columna de clases, así que la cabecera del
+           * panel hace de selector. Sin esto había que deshacer la división para
+           * cambiar de clase, que es justo el ir y venir que la pantalla partida existe
+           * para evitar.
+           */}
+          {partida && claseAbierta && (
+            <div className="cabecera-hoja">
+              <select
+                className="selector-clase"
+                value={claseAbierta.id}
+                aria-label="Clase abierta"
+                onChange={(evento) => irALaClase(cuaderno.id, evento.target.value)}
+              >
+                {visibles.map((clase) => (
+                  <option key={clase.id} value={clase.id}>
+                    {clase.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* El fallo al guardar avisa sin quitar la hoja de en medio. */}
           {errorGuardado && (
             <p className="aviso-guardado" role="alert">
               {errorGuardado}
             </p>
+          )}
+
+          {/* Mismo indicador que usa el lienzo, para que la hoja también diga si
+              lo escrito está a salvo. */}
+          {claseAbierta && estadoGuardado !== 'inactivo' && (
+            <div className={`estado-guardado estado-${estadoGuardado}`} role="status">
+              {ETIQUETA_GUARDADO[estadoGuardado]}
+            </div>
           )}
 
           {!claseAbierta ? (
@@ -447,9 +557,12 @@ export function SeccionEstudioActivo({
           ) : (
             <Suspense fallback={<p className="vacio">Cargando el editor…</p>}>
               <HojaApuntesDiferida
-                // Recrear al cambiar de clase: sin esto el editor seguiría mostrando
-                // el texto de la clase anterior.
-                key={claseAbierta.id}
+                /*
+                 * Recrear al cambiar de clase, y también al adoptar contenido de otro
+                 * dispositivo: Tiptap fija su contenido al crearse, así que remontarlo
+                 * es la forma de que muestre el texto nuevo.
+                 */
+                key={`${claseAbierta.id}:${selloContenido}`}
                 contenidoInicial={apunte.contenido}
                 onCambiar={alEscribir}
                 encabezado={diaCompletoLegible(claseAbierta.fecha)}

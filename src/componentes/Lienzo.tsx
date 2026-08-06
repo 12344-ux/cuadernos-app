@@ -38,10 +38,8 @@ import { NodoTexto as ComponenteNodoTexto } from './NodoTexto'
 /** Fuera del componente: si se recreara en cada render, React Flow remontaría todos los nodos. */
 const TIPOS_DE_NODO: NodeTypes = { texto: ComponenteNodoTexto, postit: ComponenteNodoPostit }
 
-type Medidas = { ancho: number; alto: number }
-
 /** Medidas de partida de cada tipo de elemento. */
-const MEDIDAS_NUEVAS: Record<TipoElemento, Medidas> = {
+const MEDIDAS_NUEVAS: Record<TipoElemento, { ancho: number; alto: number }> = {
   texto: { ancho: 220, alto: 90 },
   postit: { ancho: 180, alto: 150 },
 }
@@ -78,12 +76,15 @@ const MAXIMO_HISTORIAL = 60
 const AGRUPAR_HISTORIAL = 500
 
 /**
- * El lienzo no sabe a qué pertenece lo que dibuja.
+ * El lienzo del mapa conceptual.
  *
- * Recibe cómo guardar y a quién avisar, así que el mismo componente sirve para el
- * mapa conceptual de una materia y para los apuntes de una clase. Lo que cambia
- * entre los dos casos es el archivo de destino y los botones de la barra, no la
- * mecánica del lienzo.
+ * No sabe a qué pertenece lo que dibuja: recibe cómo guardar y a quién avisar. Eso le
+ * permite servir tanto al mapa a pantalla completa como al panel del mapa de la
+ * pantalla partida de Estudio Activo, que es el mismo documento visto de paso.
+ *
+ * Los apuntes de una clase ya no usan este componente. Fueron un lienzo y no
+ * funcionaba: durante una clase se escribe siguiendo lo que se explica, y había que
+ * crear y colocar un cuadro por idea. Ahora son una hoja (ver HojaApuntes).
  */
 type PropsLienzo = {
   documentoInicial: DocumentoCuaderno
@@ -96,12 +97,6 @@ type PropsLienzo = {
   etiqueta?: string
   ayuda?: string
   etiquetaCrear?: string
-  /**
-   * Con dos lienzos en pantalla partida hay que apagar las teclas del que no
-   * está en uso: React Flow escucha Supr y Retroceso en el 'document', no en su
-   * contenedor, así que sin esto una pulsación borraría en los dos a la vez.
-   */
-  teclasActivas?: boolean
   /**
    * Cada vez que este valor cambia, se reencuadra el contenido.
    *
@@ -121,14 +116,6 @@ type PropsLienzo = {
    * del panel es de usar y tirar y el documento conserva la suya.
    */
   recordarVista?: boolean
-  /**
-   * Cambia el tamaño con el que nace un elemento nuevo.
-   *
-   * Un cuadro del mapa es una idea de una línea y nace pequeño. Una nota de clase
-   * se escribe como una hoja: con encabezados, listas e imágenes dentro, y nacer
-   * del tamaño de un cuadro obligaría a agrandarla a mano antes de cada apunte.
-   */
-  medidasNuevas?: Partial<Record<TipoElemento, Medidas>>
   /**
    * Encuadra el contenido al montar aunque el documento traiga vista guardada.
    *
@@ -158,11 +145,9 @@ export function Lienzo({
   etiqueta = 'Lienzo del cuaderno',
   ayuda = 'Doble clic en el fondo para crear · arrastra desde un borde para conectar · selecciona texto para darle formato',
   etiquetaCrear = '+ Añadir cuadro',
-  teclasActivas = true,
   senalDeReajuste,
   recordarVista = true,
   encuadrarAlMontar = false,
-  medidasNuevas,
 }: PropsLienzo) {
   const [nodes, setNodes, onNodesChange] = useNodesState<NodoCuaderno>(documentoInicial.nodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(documentoInicial.edges)
@@ -308,9 +293,8 @@ export function Lienzo({
     [selloHistorial, deshacer, rehacer],
   )
 
-  // Solo el lienzo que tiene el mando anuncia su historial: en pantalla dividida
-  // hay dos, y deshacer debe actuar sobre el panel en el que estás.
-  useRegistrarHistorial(teclasActivas ? historial : null)
+  // Se anuncia a la barra de arriba, que es quien tiene los botones.
+  useRegistrarHistorial(historial)
 
   /*
    * Ctrl+Z y Ctrl+Mayús+Z para el lienzo.
@@ -328,7 +312,7 @@ export function Lienzo({
   const hayEditorActivo = useHayEditorActivo()
 
   useEffect(() => {
-    if (!teclasActivas || hayEditorActivo) return
+    if (hayEditorActivo) return
 
     const alPulsar = (evento: KeyboardEvent) => {
       if (!(evento.ctrlKey || evento.metaKey)) return
@@ -345,7 +329,7 @@ export function Lienzo({
 
     window.addEventListener('keydown', alPulsar)
     return () => window.removeEventListener('keydown', alPulsar)
-  }, [teclasActivas, hayEditorActivo, deshacer, rehacer])
+  }, [hayEditorActivo, deshacer, rehacer])
 
   /** Marca que solo ha cambiado la vista: se guarda aquí y no se anuncia. */
   const marcarVista = useCallback(() => setVersionVista((previa) => previa + 1), [])
@@ -393,7 +377,7 @@ export function Lienzo({
           : { x: window.innerWidth / 2, y: window.innerHeight / 2 })
 
       const posicion = screenToFlowPosition(punto)
-      const { ancho, alto } = medidasNuevas?.[tipo] ?? MEDIDAS_NUEVAS[tipo]
+      const { ancho, alto } = MEDIDAS_NUEVAS[tipo]
       const nodo: NodoCuaderno = {
         id: nuevoId(),
         type: tipo,
@@ -417,7 +401,7 @@ export function Lienzo({
       setNodes((previos) => [...previos.map((n) => ({ ...n, selected: false })), nodo])
       marcarCambio()
     },
-    [screenToFlowPosition, setNodes, marcarCambio, medidasNuevas],
+    [screenToFlowPosition, setNodes, marcarCambio],
   )
 
   /**
@@ -467,9 +451,8 @@ export function Lienzo({
       await guardarRef.current(documento)
       contenidoSucioRef.current = false
       setEstado('guardado')
-      // Se entrega el documento entero y no un número: qué se cuenta depende de
-      // para qué sirva el lienzo. El mapa cuenta ideas descartando los post-its;
-      // los apuntes de una clase cuentan todas las notas.
+      // Se entrega el documento entero y no un número: qué se cuenta lo decide quien
+      // monta el lienzo. El mapa cuenta ideas descartando los post-its.
       onGuardadoRef.current(documento)
     } catch (error) {
       console.error('No se pudo guardar el lienzo', error)
@@ -620,8 +603,11 @@ export function Lienzo({
         // Clave para el objetivo de "cientos o miles de ideas": no monta en el
         // DOM los cuadros que quedan fuera de la pantalla.
         onlyRenderVisibleElements
-        deleteKeyCode={teclasActivas ? ['Backspace', 'Delete'] : null}
-        multiSelectionKeyCode={teclasActivas ? ['Shift', 'Meta', 'Control'] : null}
+        // React Flow ignora estas teclas cuando el foco está en un campo o en un
+        // 'contenteditable', así que escribir en la hoja de apuntes que hay al lado en
+        // pantalla partida no borra cuadros del mapa.
+        deleteKeyCode={['Backspace', 'Delete']}
+        multiSelectionKeyCode={['Shift', 'Meta', 'Control']}
         selectionOnDrag
         panOnDrag={[1, 2]}
         panOnScroll

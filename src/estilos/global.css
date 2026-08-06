@@ -2405,3 +2405,42 @@ body.arrastrando-divisor {
   border-bottom: 1px solid #fca5a5;
   flex: 0 0 auto;
 }
+
+
+/*
+ * Cabecera del panel de la hoja en pantalla partida, con el selector de clase. Hace de
+ * sustituto de la columna de clases, que en ese modo no está.
+ */
+.cabecera-hoja {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  background: var(--superficie);
+  border-bottom: 1px solid var(--linea);
+  flex: 0 0 auto;
+}
+
+.selector-clase {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid var(--linea);
+  border-radius: 7px;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--superficie);
+  color: var(--tinta);
+}
+
+/*
+ * El indicador de guardado de la hoja va abajo a la derecha, y no arriba como en el
+ * lienzo: arriba chocaría con la cabecera del panel en pantalla partida y, en una
+ * ventana estrecha, con el propio papel.
+ */
+.panel-hoja .estado-guardado {
+  top: auto;
+  bottom: 0.7rem;
+  right: 0.9rem;
+  box-shadow: var(--sombra);
+}

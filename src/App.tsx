@@ -179,6 +179,8 @@ export default function App() {
           onActividadApuntes={nube.anotarCambioDeApuntes}
           onActividadMapa={marcarActividad}
           barraNube={barra}
+          // Para que la hoja abierta adopte lo que llegue de otro dispositivo.
+          selloSincronizacion={nube.ultimaSync}
         />
       )
     }
