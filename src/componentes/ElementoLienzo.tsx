@@ -105,8 +105,19 @@ export function ElementoLienzo({ id, data, selected, variante }: PropsElementoLi
    * editor la primera vez: al mostrar exactamente lo mismo que ya había, el cuadro
    * no pega ningún salto.
    */
+  /*
+   * 'nodrag' es de React Flow: marca la zona que no arrastra el cuadro. Aquí es lo
+   * que deja seleccionar el texto con el ratón en lugar de mover el cuadro entero.
+   *
+   * El editor ya la llevaba (ver EditorNodo), pero en reposo no, así que arrastrar
+   * sobre el texto movía el cuadro. Seleccionar el cuadro con un clic sigue
+   * funcionando: React Flow lo selecciona también desde el 'click' del nodo cuando
+   * 'nodeDragThreshold' es mayor que cero, y su valor por defecto es 1.
+   */
   const vistaEnReposo = (
-    <div className="nodo-contenido">
+    // Un cuadro vacío no lleva 'nodrag': no hay texto que seleccionar, así que se
+    // arrastra desde cualquier punto, como antes.
+    <div className={`nodo-contenido${sinTexto ? ' sin-texto' : ' nodrag'}`}>
       {sinTexto ? (
         <span className="nodo-vacio">Doble clic para escribir</span>
       ) : (
@@ -141,6 +152,18 @@ export function ElementoLienzo({ id, data, selected, variante }: PropsElementoLi
           setEditando(true)
         }}
       >
+        {/*
+          El asa de mover, sobre el relleno superior del cuadro.
+    
+          Hace falta un sitio concreto para arrastrar porque el texto ya no arrastra:
+          sin ella solo quedaría el borde, que son diez píxeles y es incómodo de
+          acertar. Ocupa exactamente el alto del relleno de arriba, así que nunca
+          tapa la primera línea de texto, y va dentro del cuadro para girar con él en
+          los post-its. La marca solo se dibuja al acercarse o con el cuadro
+          seleccionado: en reposo el lienzo se ve limpio.
+        */}
+        <span className="asa-mover" title="Arrastra para mover" aria-hidden="true" />
+
         {editando ? (
           <Suspense fallback={vistaEnReposo}>
             <EditorNodoDiferido
