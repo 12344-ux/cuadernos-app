@@ -54,18 +54,20 @@ export function rutaRegistroAdjuntos(idCuaderno: string): string {
 }
 
 /**
- * El PDF en sí, en su propio archivo y fuera de cualquier JSON.
+ * El archivo en sí, en su propio archivo y fuera de cualquier JSON.
  *
  * Es lo que hace que la función sea gratis en el día a día: el adjunto se sube
  * una vez y no se vuelve a escribir nunca, así que editar los apuntes no lo
  * arrastra. Si viviera incrustado dentro del JSON de la clase, cada autoguardado
- * volvería a subir el PDF completo.
+ * volvería a subir el archivo completo.
  *
- * Lleva el identificador y no el nombre original porque un nombre real trae
- * espacios y tildes; el nombre para descargar viaja en el registro.
+ * La ruta lleva el identificador y no el nombre original, porque un nombre real
+ * trae espacios, tildes y paréntesis; el nombre para descargar viaja en el
+ * registro. La extensión sí se conserva, deducida de ese nombre, para que el
+ * archivo se reconozca al mirarlo en GitHub.
  */
-export function rutaAdjunto(idAdjunto: string): string {
-  return `adjuntos/${idAdjunto}.pdf`
+export function rutaAdjunto(idAdjunto: string, extension: string): string {
+  return extension ? `adjuntos/${idAdjunto}.${extension}` : `adjuntos/${idAdjunto}`
 }
 
 /**

@@ -1,5 +1,5 @@
 /*
- * El panel de documentos: la lista de PDF de una materia, colgada del botón.
+ * El panel de archivos de una materia, colgado del botón.
  *
  * Dos decisiones de dibujo que son requisito y no estética:
  *
@@ -9,13 +9,13 @@
  *    barra a otra línea, que a su vez empuja el lienzo hacia abajo: exactamente el
  *    problema que costó arreglar y que no se puede reintroducir.
  *
- * 2. La zona de arrastre es el panel, no la hoja de apuntes. Soltar un PDF sobre
- *    la hoja obligaría a tocar texto/useImagenes.tsx, que es el código compartido
- *    del pegado de imágenes. Se deja intacto a propósito.
+ * 2. La zona de arrastre es el panel, no la hoja de apuntes. Soltar un archivo
+ *    sobre la hoja obligaría a tocar texto/useImagenes.tsx, que es el código
+ *    compartido del pegado de imágenes. Se deja intacto a propósito.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type DragEvent } from 'react'
 import { createPortal } from 'react-dom'
-import { AVISO_ADJUNTO, pesoLegible, type Adjunto } from '../adjuntos/tipos'
+import { pesoLegible, type Adjunto } from '../adjuntos/tipos'
 import { useAdjuntos } from '../hooks/useAdjuntos'
 import type { ClienteGitHub } from '../nube/github'
 
@@ -23,8 +23,6 @@ export type DatosAdjuntos = {
   idMateria: string
   /** La clase abierta en Estudio Activo, o null en el mapa. */
   idClase: string | null
-  /** Nombre de esa clase, solo para poder titular el grupo de la lista. */
-  nombreClase: string | null
   obtenerCliente: () => ClienteGitHub | null
 }
 
@@ -36,14 +34,7 @@ type Props = DatosAdjuntos & {
 const ANCHO_PANEL = 340
 const MARGEN = 8
 
-export function PanelDocumentos({
-  ancla,
-  onCerrar,
-  idMateria,
-  idClase,
-  nombreClase,
-  obtenerCliente,
-}: Props) {
+export function PanelDocumentos({ ancla, onCerrar, idMateria, idClase, obtenerCliente }: Props) {
   const panelRef = useRef<HTMLDivElement>(null)
   const entradaRef = useRef<HTMLInputElement>(null)
   const [posicion, setPosicion] = useState<{ top: number; left: number } | null>(null)
@@ -126,8 +117,17 @@ export function PanelDocumentos({
     [subir],
   )
 
-  const deLaClase = adjuntos.filter((a) => idClase && a.idClase === idClase)
-  const delResto = adjuntos.filter((a) => !idClase || a.idClase !== idClase)
+  /*
+   * Los de la clase abierta primero, y dentro de cada bloque los más recientes
+   * arriba (el orden que ya trae 'adjuntos'). Sin encabezados: la lista es corta y
+   * el orden basta para encontrar lo de hoy.
+   */
+  const ordenados = idClase
+    ? [
+        ...adjuntos.filter((a) => a.idClase === idClase),
+        ...adjuntos.filter((a) => a.idClase !== idClase),
+      ]
+    : adjuntos
 
   const fila = (adjunto: Adjunto) => (
     <li key={adjunto.id} className="doc-fila">
@@ -148,11 +148,7 @@ export function PanelDocumentos({
         aria-label={`Quitar ${adjunto.nombre}`}
         disabled={Boolean(ocupado)}
         onClick={() => {
-          if (
-            window.confirm(
-              `¿Quitar "${adjunto.nombre}"?\n\nDejará de aparecer y no se podrá descargar. Ten en cuenta que el archivo seguirá guardado en el historial del repositorio: quitarlo no libera ese espacio.`,
-            )
-          ) {
+          if (window.confirm(`¿Quitar "${adjunto.nombre}"?`)) {
             void eliminar(adjunto)
           }
         }}
@@ -179,18 +175,15 @@ export function PanelDocumentos({
       onDrop={alSoltar}
     >
       <div className="doc-cabecera">
-        <strong>Documentos</strong>
         <button type="button" className="doc-cerrar" aria-label="Cerrar" onClick={onCerrar}>
           ×
         </button>
       </div>
 
+      {/* Sin 'accept': se admite cualquier tipo de archivo. */}
       <input
         ref={entradaRef}
         type="file"
-        // El 'accept' filtra el diálogo del sistema; 'esPdf' vuelve a comprobarlo
-        // al recibir, porque al arrastrar no hay diálogo que filtre.
-        accept="application/pdf,.pdf"
         multiple
         hidden
         onChange={(evento) => {
@@ -208,14 +201,8 @@ export function PanelDocumentos({
         disabled={Boolean(ocupado)}
         onClick={() => entradaRef.current?.click()}
       >
-        Subir un PDF…
+        Subir archivo…
       </button>
-
-      <p className="doc-pista">
-        {idClase && nombreClase
-          ? `Se guardará en «${nombreClase}». También puedes arrastrarlo aquí.`
-          : 'Se guardará en la materia. También puedes arrastrarlo aquí.'}
-      </p>
 
       {ocupado && (
         <p className="doc-estado" role="status">
@@ -228,30 +215,9 @@ export function PanelDocumentos({
         </p>
       )}
 
-      {cargando && !cargado && <p className="doc-vacio">Buscando documentos…</p>}
+      {cargando && !cargado && <p className="doc-vacio">Buscando…</p>}
 
-      {cargado && adjuntos.length === 0 && !ocupado && (
-        <p className="doc-vacio">Todavía no hay documentos en esta materia.</p>
-      )}
-
-      {deLaClase.length > 0 && (
-        <>
-          <h4 className="doc-grupo">De esta clase</h4>
-          <ul className="doc-lista">{deLaClase.map(fila)}</ul>
-        </>
-      )}
-
-      {delResto.length > 0 && (
-        <>
-          {deLaClase.length > 0 && <h4 className="doc-grupo">Del resto de la materia</h4>}
-          <ul className="doc-lista">{delResto.map(fila)}</ul>
-        </>
-      )}
-
-      <p className="doc-nota">
-        Se descargan a tu carpeta de descargas. Máximo {pesoLegible(AVISO_ADJUNTO)} recomendado por
-        archivo.
-      </p>
+      {ordenados.length > 0 && <ul className="doc-lista">{ordenados.map(fila)}</ul>}
     </div>,
     document.body,
   )

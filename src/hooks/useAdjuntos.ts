@@ -15,9 +15,6 @@ import {
 } from '../adjuntos/registro'
 import {
   AdjuntoDemasiadoGrande,
-  NoEsPdf,
-  TIPO_ADJUNTO,
-  esPdf,
   registroVacio,
   type Adjunto,
   type RegistroAdjuntos,
@@ -32,9 +29,7 @@ type Opciones = {
 }
 
 function mensajeDeError(causa: unknown): string {
-  if (causa instanceof NoEsPdf || causa instanceof AdjuntoDemasiadoGrande) {
-    return causa.message
-  }
+  if (causa instanceof AdjuntoDemasiadoGrande) return causa.message
   if (causa instanceof Error) return causa.message
   return 'No se pudo completar la operación.'
 }
@@ -83,30 +78,16 @@ export function useAdjuntos({ idMateria, idClase, obtenerCliente }: Opciones) {
       if (!cliente) return sinConexion()
       if (enCursoRef.current) return
 
-      // Se filtra antes de empezar para poder avisar de una vez, en lugar de
-      // soltar un error por cada archivo que no era PDF.
-      const pdfs = archivos.filter(esPdf)
-      if (pdfs.length === 0) {
-        setError('Aquí solo entran archivos PDF.')
-        return
-      }
-      const descartados = archivos.length - pdfs.length
+      if (archivos.length === 0) return
 
       enCursoRef.current = true
       setError(null)
       try {
-        for (const archivo of pdfs) {
+        for (const archivo of archivos) {
           setOcupado(`Subiendo ${archivo.name}…`)
           const siguiente = await subirAdjunto(cliente, idMateria, idClase, archivo)
           setRegistro(siguiente)
           setCargado(true)
-        }
-        if (descartados > 0) {
-          setError(
-            descartados === 1
-              ? 'Se ignoró un archivo que no era PDF.'
-              : `Se ignoraron ${descartados} archivos que no eran PDF.`,
-          )
         }
       } catch (causa) {
         console.error('No se pudo subir el documento', causa)
@@ -139,7 +120,17 @@ export function useAdjuntos({ idMateria, idClase, obtenerCliente }: Opciones) {
       let url: string | null = null
       try {
         const bytes = await descargarAdjunto(cliente, adjunto)
-        url = URL.createObjectURL(new Blob([bytes], { type: TIPO_ADJUNTO }))
+        /*
+         * Se entrega como flujo de bytes genérico y no con el tipo real del
+         * archivo.
+         *
+         * El tipo no se guarda en el registro a propósito, y aquí no hace falta:
+         * con el atributo 'download' el navegador escribe el archivo en disco con
+         * su nombre original en lugar de intentar abrirlo, y a partir de ahí es el
+         * sistema quien lo asocia a su programa por la extensión. Declarar un tipo
+         * concreto solo importaría si se pretendiera mostrarlo en el navegador.
+         */
+        url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }))
         const enlace = document.createElement('a')
         enlace.href = url
         enlace.download = adjunto.nombre

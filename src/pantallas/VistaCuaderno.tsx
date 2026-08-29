@@ -99,7 +99,6 @@ export function VistaCuaderno({ cuaderno, barraNube, onActividad, obtenerCliente
         adjuntos={{
           idMateria: cuaderno.id,
           idClase: null,
-          nombreClase: null,
           obtenerCliente,
         }}
       />

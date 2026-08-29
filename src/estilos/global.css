@@ -3191,11 +3191,11 @@ body.arrastrando-divisor {
   background: var(--acento-suave);
 }
 
+/* Solo lleva el cierre, alineado a la derecha. */
 .doc-cabecera {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+  justify-content: flex-end;
 }
 
 .doc-cerrar,
@@ -3225,13 +3225,6 @@ body.arrastrando-divisor {
   width: 100%;
 }
 
-.doc-pista,
-.doc-nota {
-  margin: 0;
-  font-size: 0.72rem;
-  color: var(--tinta-tenue);
-}
-
 .doc-estado {
   margin: 0;
   font-size: 0.75rem;
@@ -3258,15 +3251,6 @@ body.arrastrando-divisor {
   color: var(--tinta-suave);
   text-align: center;
   padding: 0.5rem 0;
-}
-
-.doc-grupo {
-  margin: 0.25rem 0 0;
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--tinta-tenue);
-  font-weight: 600;
 }
 
 .doc-lista {
@@ -3340,9 +3324,7 @@ body.arrastrando-divisor {
   font-size: 0.95rem;
 }
 
-[data-modo='comodo'] .doc-peso,
-[data-modo='comodo'] .doc-pista,
-[data-modo='comodo'] .doc-nota {
+[data-modo='comodo'] .doc-peso {
   font-size: 0.8rem;
 }
 
