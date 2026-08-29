@@ -1,7 +1,8 @@
 import type { Editor } from '@tiptap/core'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CLASE_BARRA_FORMATO, useFormato, type Historial } from '../formato/contexto'
 import { usarPaleta } from '../modo/visual'
+import { PanelDocumentos, type DatosAdjuntos } from './PanelDocumentos'
 import {
   ALINEACIONES_TEXTO,
   CLAVES_COLOR,
@@ -132,7 +133,32 @@ function useRepintarConElEditor(editor: Editor | null): void {
  * hay ningún cuadro que seleccionar y la fila se quedaría apagada para siempre
  * gastando una línea de alto.
  */
-export function BarraFormato({ conElementos = false }: { conElementos?: boolean }) {
+export function BarraFormato({
+  conElementos = false,
+  adjuntos,
+}: {
+  conElementos?: boolean
+  /**
+   * Datos para el botón de documentos. Sin esto el botón sale deshabilitado, que
+   * es lo que toca en una pantalla que no cuelga de una materia.
+   */
+  adjuntos?: DatosAdjuntos
+}) {
+  const anclaPdfRef = useRef<HTMLButtonElement>(null)
+  const [panelAbierto, setPanelAbierto] = useState(false)
+
+  /*
+   * Al cambiar de materia el panel se cierra.
+   *
+   * Sin esto, salir a otra asignatura con el panel abierto dejaría en pantalla la
+   * lista de la anterior, y el siguiente PDF que se subiera iría a la materia que
+   * ya no estás viendo.
+   */
+  const idMateriaActual = adjuntos?.idMateria
+  useEffect(() => {
+    setPanelAbierto(false)
+  }, [idMateriaActual])
+
   const { editor: registrado, pedirImagen, elemento, historial } = useFormato()
   const paleta = usarPaleta()
   useRepintarConElEditor(registrado)
@@ -420,6 +446,27 @@ export function BarraFormato({ conElementos = false }: { conElementos?: boolean 
         >
           Imagen
         </button>
+        {/*
+          Los documentos van en este grupo, junto a Imagen, porque son la otra
+          cosa que se adjunta. No abre una fila nueva ni un separador: la barra
+          debe medir exactamente lo mismo que antes de que este botón existiera.
+
+          Se deshabilita en lugar de esconderse cuando la pantalla no tiene
+          materia asociada, siguiendo la norma del resto de la barra.
+        */}
+        <button
+          ref={anclaPdfRef}
+          type="button"
+          className="boton-barra"
+          title="Documentos PDF de esta materia · subir y descargar"
+          aria-label="Documentos PDF de esta materia"
+          aria-expanded={panelAbierto}
+          disabled={!adjuntos}
+          onMouseDown={noRobarFoco}
+          onClick={() => setPanelAbierto((abierto) => !abierto)}
+        >
+          PDF
+        </button>
         <button
           type="button"
           className="boton-barra"
@@ -516,6 +563,19 @@ export function BarraFormato({ conElementos = false }: { conElementos?: boolean 
             </button>
           </div>
         </>
+      )}
+
+      {/*
+        El panel se pinta con un portal a document.body desde dentro del
+        componente, así que este JSX no añade nada al flujo de la barra: no ocupa
+        ancho, no cuenta para el plegado y no puede cambiar su alto.
+      */}
+      {panelAbierto && adjuntos && (
+        <PanelDocumentos
+          {...adjuntos}
+          ancla={anclaPdfRef.current}
+          onCerrar={() => setPanelAbierto(false)}
+        />
       )}
     </div>
   )

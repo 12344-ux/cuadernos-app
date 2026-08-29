@@ -6,12 +6,14 @@ import { SesionEstudio } from '../componentes/SesionEstudio'
 import { useMazos } from '../hooks/useMazos'
 import { irAlCuaderno } from '../hooks/useRuta'
 import { contar } from '../tarjetas/sm2'
+import type { ClienteGitHub } from '../nube/github'
 import type { Mazo } from '../tarjetas/tipos'
 import type { Cuaderno } from '../tipos'
 
 type Props = {
   cuaderno: Cuaderno
   onActividad: (id: string, numTarjetas: number) => void
+  obtenerCliente: () => ClienteGitHub | null
 }
 
 function TarjetaMazo({
@@ -114,7 +116,7 @@ function TarjetaMazo({
  * propio de esta pantalla es la tarjeta que se voltea y los cuatro botones de
  * respuesta, donde el color sí distingue la dificultad.
  */
-export function PantallaFlashcards({ cuaderno, onActividad }: Props) {
+export function PantallaFlashcards({ cuaderno, onActividad, obtenerCliente }: Props) {
   const alGuardar = useCallback(
     (numTarjetas: number) => onActividad(cuaderno.id, numTarjetas),
     [cuaderno.id, onActividad],
@@ -183,7 +185,14 @@ export function PantallaFlashcards({ cuaderno, onActividad }: Props) {
 
       {/* Las caras de una tarjeta usan el mismo editor que el resto, así que su
           formato también sale de la barra de arriba. */}
-      <BarraFormato />
+      <BarraFormato
+        adjuntos={{
+          idMateria: cuaderno.id,
+          idClase: null,
+          nombreClase: null,
+          obtenerCliente,
+        }}
+      />
 
       <main className="cuerpo-estudio">
         {error && <p className="vacio">{error}</p>}

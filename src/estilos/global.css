@@ -3156,3 +3156,198 @@ body.arrastrando-divisor {
 [data-modo='comodo'] .respuesta-plazo {
   letter-spacing: 0.01em;
 }
+
+
+/* ---------- Panel de documentos (PDF de la materia) ---------- */
+
+/*
+ * Se dibuja con un portal a document.body y position: fixed.
+ *
+ * No es una preferencia estética: la barra de formato es flex-wrap: wrap, así que
+ * cualquier hijo suyo cuenta para el plegado. Un panel dentro del flujo podría
+ * empujar la barra a otra línea, y la barra empuja el lienzo. Fuera del flujo, el
+ * alto de la barra no puede cambiar por nada de lo que haya aquí.
+ *
+ * El z-index queda por encima del de .barra-formato (6) y de los lienzos.
+ */
+.panel-documentos {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: min(70vh, 32rem);
+  overflow-y: auto;
+  padding: 0.75rem;
+  background: var(--superficie);
+  border: var(--borde) solid var(--linea-fuerte);
+  border-radius: 0.6rem;
+  box-shadow: 0 0.75rem 2rem rgb(44 44 42 / 0.18);
+}
+
+/* Al arrastrar un archivo encima, el borde confirma que se puede soltar. */
+.panel-documentos-soltar {
+  border-color: var(--acento);
+  background: var(--acento-suave);
+}
+
+.doc-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.doc-cerrar,
+.doc-quitar {
+  border: none;
+  background: none;
+  color: var(--tinta-suave);
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+
+.doc-cerrar:hover,
+.doc-quitar:hover {
+  background: var(--superficie-hover);
+  color: var(--tinta);
+}
+
+.doc-quitar:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.doc-subir {
+  width: 100%;
+}
+
+.doc-pista,
+.doc-nota {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--tinta-tenue);
+}
+
+.doc-estado {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--info-tinta);
+  background: var(--info-fondo);
+  border: var(--borde) solid var(--info-borde);
+  border-radius: 0.4rem;
+  padding: 0.3rem 0.5rem;
+}
+
+.doc-error {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--error-tinta);
+  background: var(--error-fondo);
+  border: var(--borde) solid var(--error-borde);
+  border-radius: 0.4rem;
+  padding: 0.3rem 0.5rem;
+}
+
+.doc-vacio {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--tinta-suave);
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+.doc-grupo {
+  margin: 0.25rem 0 0;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tinta-tenue);
+  font-weight: 600;
+}
+
+.doc-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.doc-fila {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/*
+ * El nombre es el botón de descarga: es la acción que se quiere el 99 % de las
+ * veces, así que ocupa toda la fila en lugar de esconderse detrás de un icono.
+ */
+.doc-nombre {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  text-align: left;
+  border: var(--borde) solid transparent;
+  background: none;
+  border-radius: 0.4rem;
+  padding: 0.35rem 0.45rem;
+  cursor: pointer;
+  color: var(--tinta);
+  font: inherit;
+}
+
+.doc-nombre:hover {
+  background: var(--acento-suave);
+  border-color: var(--acento-borde);
+}
+
+.doc-nombre:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.doc-nombre:disabled:hover {
+  background: none;
+  border-color: transparent;
+}
+
+/* Un nombre largo se recorta en lugar de estirar el panel. */
+.doc-titulo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+
+.doc-peso {
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  color: var(--tinta-tenue);
+  font-variant-numeric: tabular-nums;
+}
+
+/* En modo cómodo, el mismo salto de cuerpo que el resto de la aplicación. */
+[data-modo='comodo'] .doc-titulo {
+  font-size: 0.95rem;
+}
+
+[data-modo='comodo'] .doc-peso,
+[data-modo='comodo'] .doc-pista,
+[data-modo='comodo'] .doc-nota {
+  font-size: 0.8rem;
+}
+
+[data-modo='comodo'] .doc-estado,
+[data-modo='comodo'] .doc-error,
+[data-modo='comodo'] .doc-vacio {
+  font-size: 0.85rem;
+}

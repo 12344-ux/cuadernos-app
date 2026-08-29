@@ -5,15 +5,17 @@ import { BarraFormato } from '../componentes/BarraFormato'
 import { Lienzo } from '../componentes/Lienzo'
 import { irAlEstudioActivo, irAlSelector, irAlasFlashcards } from '../hooks/useRuta'
 import { usarPaleta } from '../modo/visual'
+import type { ClienteGitHub } from '../nube/github'
 import { colorDeMateria, type Cuaderno, type DocumentoCuaderno } from '../tipos'
 
 type Props = {
   cuaderno: Cuaderno
   barraNube?: ReactNode
   onActividad: (id: string, numIdeas: number) => void
+  obtenerCliente: () => ClienteGitHub | null
 }
 
-export function VistaCuaderno({ cuaderno, barraNube, onActividad }: Props) {
+export function VistaCuaderno({ cuaderno, barraNube, onActividad, obtenerCliente }: Props) {
   const paleta = usarPaleta()
   const [documento, setDocumento] = useState<DocumentoCuaderno | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -90,7 +92,17 @@ export function VistaCuaderno({ cuaderno, barraNube, onActividad }: Props) {
 
       {/* Anclada aquí, y no flotando sobre el lienzo: actúa sobre el cuadro
           seleccionado o sobre el texto que se esté escribiendo. */}
-      <BarraFormato conElementos />
+      <BarraFormato
+        conElementos
+        /* Desde el mapa no hay clase abierta, así que lo que se suba queda de la
+           materia en general. */
+        adjuntos={{
+          idMateria: cuaderno.id,
+          idClase: null,
+          nombreClase: null,
+          obtenerCliente,
+        }}
+      />
 
       {error ? (
         <p className="vacio">{error}</p>

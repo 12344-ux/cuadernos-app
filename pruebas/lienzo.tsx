@@ -91,7 +91,22 @@ createRoot(document.getElementById('raiz')!).render(
             ))}
           </section>
 
-          <BarraFormato conElementos />
+          {/*
+            Se le pasan datos de adjuntos para que el botón PDF quede habilitado y
+            se pueda comprobar a mano lo que importa: que abrir el panel no cambie
+            el alto de la barra. 'obtenerCliente' devuelve null a propósito, así el
+            panel se abre y avisa de que no hay sesión en lugar de llamar a GitHub
+            desde un banco de pruebas.
+          */}
+          <BarraFormato
+            conElementos
+            adjuntos={{
+              idMateria: 'materia-de-prueba',
+              idClase: null,
+              nombreClase: null,
+              obtenerCliente: () => null,
+            }}
+          />
           <div style={{ flex: '1 1 auto', minHeight: 0 }}>
             <ReactFlowProvider>
               <ReactFlow<NodoCuaderno>

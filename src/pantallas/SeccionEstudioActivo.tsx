@@ -12,6 +12,7 @@ import { PanelClases } from '../componentes/PanelClases'
 import { diaCompletoLegible } from '../fechas'
 import { useClases } from '../hooks/useClases'
 import { irALaClase, irAlCuaderno, irAlEstudioActivo } from '../hooks/useRuta'
+import type { ClienteGitHub } from '../nube/github'
 import type { Cuaderno, DocumentoCuaderno } from '../tipos'
 
 /*
@@ -78,6 +79,7 @@ type Props = {
   /** Cambió el mapa desde la vista partida. */
   onActividadMapa: (idCuaderno: string, numIdeas: number) => void
   barraNube?: ReactNode
+  obtenerCliente: () => ClienteGitHub | null
 }
 
 /**
@@ -95,6 +97,7 @@ export function SeccionEstudioActivo({
   onActividadApuntes,
   onActividadMapa,
   barraNube,
+  obtenerCliente,
 }: Props) {
   const alCambiarLista = useCallback(
     () => onActividadClases(cuaderno.id),
@@ -367,7 +370,21 @@ export function SeccionEstudioActivo({
        * Con una barra por panel habría dos juegos de controles compitiendo.
        */}
       {/* La fila del cuadro solo hace falta cuando el mapa está en pantalla. */}
-      <BarraFormato conElementos={partida} />
+      <BarraFormato
+        conElementos={partida}
+        /*
+         * Aquí sí hay clase abierta, así que el PDF que se suba queda etiquetado
+         * con ella. El registro sigue siendo uno por materia: la clase es una
+         * etiqueta, no una carpeta, y por eso renombrarla o borrarla no se lleva
+         * sus documentos.
+         */
+        adjuntos={{
+          idMateria: cuaderno.id,
+          idClase,
+          nombreClase: claseAbierta?.nombre ?? null,
+          obtenerCliente,
+        }}
+      />
 
       <div
         className={`cuerpo-apuntes${partida ? ' partida' : ''}`}

@@ -179,7 +179,13 @@ export default function App() {
     }
 
     if (ruta.tipo === 'flashcards') {
-      return <PantallaFlashcards cuaderno={cuaderno} onActividad={marcarActividadMazos} />
+      return (
+        <PantallaFlashcards
+          cuaderno={cuaderno}
+          onActividad={marcarActividadMazos}
+          obtenerCliente={nube.obtenerCliente}
+        />
+      )
     }
 
     if (ruta.tipo === 'estudio' || ruta.tipo === 'clase') {
@@ -191,11 +197,19 @@ export default function App() {
           onActividadApuntes={nube.anotarCambioDeApuntes}
           onActividadMapa={marcarActividad}
           barraNube={barra}
+          obtenerCliente={nube.obtenerCliente}
         />
       )
     }
 
-    return <VistaCuaderno cuaderno={cuaderno} onActividad={marcarActividad} barraNube={barra} />
+    return (
+      <VistaCuaderno
+        cuaderno={cuaderno}
+        onActividad={marcarActividad}
+        barraNube={barra}
+        obtenerCliente={nube.obtenerCliente}
+      />
+    )
   }
 
   return (

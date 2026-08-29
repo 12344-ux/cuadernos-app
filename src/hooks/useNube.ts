@@ -84,6 +84,17 @@ export function useNube({ alActualizarIndice }: Opciones) {
 
   const refrescarPendientes = useCallback(() => setPendientes(hayPendientes()), [])
 
+  /*
+   * Acceso al cliente para lo que no pasa por el ciclo de sincronización.
+   *
+   * Lo usan los documentos adjuntos: se suben y se descargan de uno en uno, por
+   * una acción explícita, así que no tienen nada que hacer en el motor de
+   * fusiones. Se entrega como función y no como valor para no provocar
+   * repintados cuando la sesión se abre o se cierra: quien lo llame lo hace ya
+   * dentro del manejador del clic.
+   */
+  const obtenerCliente = useCallback(() => clienteRef.current, [])
+
   /** Sincronización real. Devuelve true si terminó sin errores. */
   const ejecutarSincronizacion = useCallback(async (): Promise<boolean> => {
     const cliente = clienteRef.current
@@ -328,6 +339,7 @@ export function useNube({ alActualizarIndice }: Opciones) {
     anotarCambioDeAgenda,
     anotarCambioDeClases,
     anotarCambioDeApuntes,
+    obtenerCliente,
     sincronizarAhora: ejecutarSincronizacion,
   }
 }
