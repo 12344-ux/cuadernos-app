@@ -17,10 +17,9 @@ import { rutaAdjunto, rutaRegistroAdjuntos } from '../nube/configuracion'
 import { ErrorConflicto, type ClienteGitHub } from '../nube/github'
 import {
   AdjuntoDemasiadoGrande,
-  NoEsPdf,
   TOPE_ADJUNTO,
   VERSION_ADJUNTOS,
-  esPdf,
+  extensionDe,
   registroVacio,
   type Adjunto,
   type RegistroAdjuntos,
@@ -163,7 +162,6 @@ export async function subirAdjunto(
   idClase: string | null,
   archivo: File,
 ): Promise<RegistroAdjuntos> {
-  if (!esPdf(archivo)) throw new NoEsPdf()
   if (archivo.size > TOPE_ADJUNTO) throw new AdjuntoDemasiadoGrande()
 
   const id = nuevoId()
@@ -172,7 +170,7 @@ export async function subirAdjunto(
   // Sin sha: es un archivo nuevo con identificador recién generado, así que no
   // puede existir ya en el repositorio.
   await cliente.escribirBinario(
-    rutaAdjunto(id),
+    rutaAdjunto(id, extensionDe(archivo.name)),
     bytes,
     undefined,
     `Subir documento ${archivo.name}`,
@@ -197,7 +195,7 @@ export async function descargarAdjunto(
   cliente: ClienteGitHub,
   adjunto: Adjunto,
 ): Promise<Uint8Array<ArrayBuffer>> {
-  const remoto = await cliente.leerBinario(rutaAdjunto(adjunto.id))
+  const remoto = await cliente.leerBinario(rutaAdjunto(adjunto.id, extensionDe(adjunto.nombre)))
   if (!remoto) {
     throw new Error(
       `"${adjunto.nombre}" ya no está en la nube. Puede haberse borrado desde otro dispositivo.`,
@@ -234,13 +232,10 @@ export async function eliminarAdjunto(
     }),
   )
 
-  const remoto = await cliente.leerBinario(rutaAdjunto(adjunto.id))
+  const ruta = rutaAdjunto(adjunto.id, extensionDe(adjunto.nombre))
+  const remoto = await cliente.leerBinario(ruta)
   if (remoto) {
-    await cliente.eliminarArchivo(
-      rutaAdjunto(adjunto.id),
-      remoto.sha,
-      `Borrar documento ${adjunto.nombre}`,
-    )
+    await cliente.eliminarArchivo(ruta, remoto.sha, `Borrar documento ${adjunto.nombre}`)
   }
 
   return registro

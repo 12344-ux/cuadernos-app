@@ -103,7 +103,6 @@ createRoot(document.getElementById('raiz')!).render(
             adjuntos={{
               idMateria: 'materia-de-prueba',
               idClase: null,
-              nombreClase: null,
               obtenerCliente: () => null,
             }}
           />

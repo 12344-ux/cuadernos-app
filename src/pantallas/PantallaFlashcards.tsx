@@ -189,7 +189,6 @@ export function PantallaFlashcards({ cuaderno, onActividad, obtenerCliente }: Pr
         adjuntos={{
           idMateria: cuaderno.id,
           idClase: null,
-          nombreClase: null,
           obtenerCliente,
         }}
       />

@@ -65,8 +65,19 @@ export function registroVacio(): RegistroAdjuntos {
   return { version: VERSION_ADJUNTOS, adjuntos: [] }
 }
 
-/** Solo PDF. Es lo que se pidió, y es lo que mantiene la función previsible. */
-export const TIPO_ADJUNTO = 'application/pdf'
+/**
+ * Se admite cualquier tipo de archivo.
+ *
+ * No hay lista blanca de extensiones ni comprobación de tipo, y no es descuido:
+ * un adjunto se guarda y se descarga, nunca se interpreta ni se muestra, así que
+ * el tipo no cambia en nada lo que la aplicación hace con él. Filtrar solo
+ * serviría para rechazar por error algo perfectamente válido, y de hecho pasaría:
+ * al arrastrar desde algunos gestores de archivos el 'type' del navegador llega
+ * en blanco, y muchos formatos de oficina se declaran con tipos distintos según
+ * el sistema.
+ *
+ * El único límite es el tamaño.
+ */
 
 /**
  * Tope duro por archivo.
@@ -78,33 +89,31 @@ export const TIPO_ADJUNTO = 'application/pdf'
  */
 export const TOPE_ADJUNTO = 25 * 1024 * 1024
 
-/** A partir de aquí se avisa antes de subir, pero se deja continuar. */
-export const AVISO_ADJUNTO = 10 * 1024 * 1024
-
 export class AdjuntoDemasiadoGrande extends Error {
   constructor() {
-    super('Ese PDF pesa más de 25 MB.')
+    super('Ese archivo pesa más de 25 MB.')
     this.name = 'AdjuntoDemasiadoGrande'
   }
 }
 
-export class NoEsPdf extends Error {
-  constructor() {
-    super('Aquí solo entran archivos PDF.')
-    this.name = 'NoEsPdf'
-  }
-}
-
 /**
- * ¿Es un PDF?
+ * La extensión del nombre, para poder reconstruir la ruta remota.
  *
- * Se mira el tipo que declara el navegador y, si viene vacío, la extensión. Al
- * arrastrar desde algunos gestores de archivos el 'type' llega en blanco, y
- * rechazar por eso un PDF perfectamente válido sería desconcertante.
+ * Se deduce del nombre guardado en lugar de guardarse en un campo aparte, y esa
+ * decisión es la que mantiene compatibles los adjuntos que ya estaban subidos:
+ * los de antes se guardaron en 'adjuntos/<id>.pdf' y su nombre acaba en '.pdf',
+ * así que esta función devuelve exactamente la misma ruta que antes. Un campo
+ * nuevo, en cambio, lo habría borrado cualquier versión anterior del
+ * normalizador y esos archivos se habrían vuelto inalcanzables.
+ *
+ * Se limita a letras y números por seguridad: la extensión entra en una ruta, y
+ * un nombre como 'informe.tar.gz/../algo' no debe poder torcerla.
  */
-export function esPdf(archivo: File): boolean {
-  if (archivo.type) return archivo.type === TIPO_ADJUNTO
-  return archivo.name.toLowerCase().endsWith('.pdf')
+export function extensionDe(nombre: string): string {
+  const punto = nombre.lastIndexOf('.')
+  if (punto <= 0 || punto === nombre.length - 1) return ''
+  const cruda = nombre.slice(punto + 1).toLowerCase()
+  return /^[a-z0-9]{1,12}$/.test(cruda) ? cruda : ''
 }
 
 /** Para mostrar el peso sin pensar en unidades. */

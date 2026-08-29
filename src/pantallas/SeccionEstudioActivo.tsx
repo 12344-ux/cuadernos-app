@@ -381,7 +381,6 @@ export function SeccionEstudioActivo({
         adjuntos={{
           idMateria: cuaderno.id,
           idClase,
-          nombreClase: claseAbierta?.nombre ?? null,
           obtenerCliente,
         }}
       />
