@@ -1,4 +1,4 @@
-import { base64ATexto, textoABase64 } from './base64'
+import { base64ABytes, base64ATexto, bytesABase64, textoABase64 } from './base64'
 import { REPO_DATOS } from './configuracion'
 
 const API = 'https://api.github.com'
@@ -182,6 +182,82 @@ export class ClienteGitHub {
         respuesta.status,
         `No se pudo guardar ${ruta} (${respuesta.status}).`,
       )
+    }
+
+    const datos = (await respuesta.json()) as { content?: { sha?: string } }
+    const nuevoSha = datos.content?.sha
+    if (!nuevoSha) {
+      throw new ErrorGitHub(respuesta.status, `GitHub no devolvió el sha de ${ruta}.`)
+    }
+    return nuevoSha
+  }
+
+  /**
+   * Lee un archivo BINARIO. Devuelve null si todavía no existe.
+   *
+   * Hace falta aparte de 'leerArchivo' y no es un capricho: esa función pasa lo
+   * recibido por un decodificador UTF-8, en las dos ramas ('base64ATexto' abajo
+   * de 1 MB y 'respuesta.text()' por encima). Un PDF no es texto UTF-8, así que
+   * ese paso lo destroza. Y lo haría en silencio: la subida funcionaría, la
+   * descarga funcionaría, y el archivo simplemente no abriría.
+   */
+  async leerBinario(
+    ruta: string,
+    // El tipo se fija a Uint8Array<ArrayBuffer> por el mismo motivo que en
+    // base64.ts: el genérico incluye SharedArrayBuffer desde TypeScript 5.7 y no
+    // satisface el BlobPart que hace falta para entregar la descarga.
+  ): Promise<{ bytes: Uint8Array<ArrayBuffer>; sha: string } | null> {
+    const url = `${this.base}/contents/${encodeURI(ruta)}?ref=${REPO_DATOS.rama}`
+    const respuesta = await this.pedir(url, { headers: this.cabeceras() })
+
+    if (respuesta.status === 404) return null
+    if (!respuesta.ok) {
+      throw new ErrorGitHub(respuesta.status, `No se pudo leer ${ruta} (${respuesta.status}).`)
+    }
+
+    const datos = (await respuesta.json()) as { content?: string; sha: string }
+
+    // Igual que en 'leerArchivo': por encima de 1 MB el endpoint deja 'content'
+    // vacío y hay que pedirlo en bruto. La diferencia está en cómo se recoge:
+    // 'arrayBuffer()' y no 'text()', que es justo lo que preserva los bytes.
+    if (!datos.content) {
+      const bruto = await this.pedir(url, {
+        headers: this.cabeceras({ Accept: 'application/vnd.github.raw' }),
+      })
+      if (!bruto.ok) {
+        throw new ErrorGitHub(bruto.status, `No se pudo leer ${ruta} en bruto.`)
+      }
+      return { bytes: new Uint8Array(await bruto.arrayBuffer()), sha: datos.sha }
+    }
+
+    return { bytes: base64ABytes(datos.content), sha: datos.sha }
+  }
+
+  /**
+   * Crea o actualiza un archivo binario.
+   *
+   * 'bytesABase64' recibe los bytes tal cual, sin pasarlos por TextEncoder: es
+   * la mitad binaria de la pareja que ya usaba el cifrado del token.
+   */
+  async escribirBinario(
+    ruta: string,
+    bytes: Uint8Array,
+    sha: string | undefined,
+    mensaje: string,
+  ): Promise<string> {
+    const respuesta = await this.pedir(`${this.base}/contents/${encodeURI(ruta)}`, {
+      method: 'PUT',
+      headers: this.cabeceras({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({
+        message: mensaje,
+        content: bytesABase64(bytes),
+        branch: REPO_DATOS.rama,
+        ...(sha ? { sha } : {}),
+      }),
+    })
+
+    if (!respuesta.ok) {
+      throw new ErrorGitHub(respuesta.status, `No se pudo subir ${ruta} (${respuesta.status}).`)
     }
 
     const datos = (await respuesta.json()) as { content?: { sha?: string } }
